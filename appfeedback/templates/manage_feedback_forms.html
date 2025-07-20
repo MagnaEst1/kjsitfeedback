@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+{% block title %}Manage Feedback Forms - KJSIT Feedback{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Manage Feedback Forms</h1>
+                <p class="text-gray-600">View, edit, and manage all feedback forms</p>
+            </div>
+            <a href="{% url 'create_feedback_form' %}" 
+               class="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                Create New Form
+            </a>
+        </div>
+    </div>
+
+    {% if forms %}
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Form Details
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Subject & Professor
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status & Timeline
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Responses
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for form in forms %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ form.title }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            {{ form.division }}
+                                            {% if form.practical_batch %}
+                                                - {{ form.practical_batch.name }}
+                                            {% endif %}
+                                        </div>
+                                        {% if form.description %}
+                                            <div class="text-xs text-gray-400 mt-1">
+                                                {{ form.description|truncatewords:10 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ form.subject.name }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            {{ form.subject.get_subject_type_display }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            {{ form.professor.user.get_full_name }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div>
+                                        {% if form.is_active %}
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                Active
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                                Inactive
+                                            </span>
+                                        {% endif %}
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            <div>Start: {{ form.start_date|date:"M d, Y H:i" }} IST</div>
+                                            <div>End: {{ form.end_date|date:"M d, Y H:i" }} IST</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        {{ form.responses.count }} responses
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        {{ form.questions.count }} questions
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-wrap gap-2">
+                                        <a href="{% url 'edit_feedback_form' form.id %}" 
+                                           class="text-blue-600 hover:text-blue-900 text-sm">
+                                            Edit
+                                        </a>
+                                        <a href="{% url 'manage_questions' form.id %}" 
+                                           class="text-green-600 hover:text-green-900 text-sm">
+                                            Questions ({{ form.questions.count }})
+                                        </a>
+                                        <form method="post" action="{% url 'toggle_form_status' form.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit" 
+                                                    class="text-{% if form.is_active %}red{% else %}green{% endif %}-600 hover:text-{% if form.is_active %}red{% else %}green{% endif %}-900 text-sm">
+                                                {% if form.is_active %}Deactivate{% else %}Activate{% endif %}
+                                            </button>
+                                        </form>
+                                        {% if form.responses.count > 0 %}
+                                            <a href="{% url 'view_feedback_responses' form.id %}" 
+                                               class="text-purple-600 hover:text-purple-900 text-sm">
+                                                View Responses ({{ form.responses.count }})
+                                            </a>
+                                        {% else %}
+                                            <span class="text-gray-400 text-sm">No Responses</span>
+                                        {% endif %}
+                                        <a href="{% url 'delete_feedback_form' form.id %}" 
+                                           class="text-red-600 hover:text-red-900 text-sm">
+                                            Delete
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div class="bg-blue-50 rounded-lg p-4">
+                <h3 class="text-lg font-semibold text-blue-800">Total Forms</h3>
+                <p class="text-2xl font-bold text-blue-600">{{ forms.count }}</p>
+            </div>
+            <div class="bg-green-50 rounded-lg p-4">
+                <h3 class="text-lg font-semibold text-green-800">Active Forms</h3>
+                <p class="text-2xl font-bold text-green-600">{{ active_forms_count }}</p>
+            </div>
+        </div>
+    {% else %}
+        <div class="bg-white rounded-lg shadow-lg p-12 text-center">
+            <div class="text-gray-400 mb-4">
+                <svg class="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-medium text-gray-900 mb-2">No feedback forms found</h3>
+            <p class="text-gray-500 mb-6">Get started by creating your first feedback form for students to evaluate professors.</p>
+            <a href="{% url 'create_feedback_form' %}" 
+               class="inline-flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                Create Your First Form
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

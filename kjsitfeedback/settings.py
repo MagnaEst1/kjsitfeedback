@@ -47,10 +47,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'appfeedback',
+    "allauth_ui",
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    "widget_tweaks",
+    "slippers",
 ]
 
 MIDDLEWARE = [
@@ -120,7 +123,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
@@ -144,7 +147,24 @@ SOCIALACCOUNT_PROVIDERS = {
         'APP': {
             'client_id': '234527333074-37j0ci498nbv8077mt71ur1so187jdg7.apps.googleusercontent.com',
             'secret': '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',
-            'key': ''
+            'key': '',
+            'EMAIL_AUTHENTICATION': True
         }
     }
 }
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+ACCOUNT_EMAIL_VERIFICATION = 'none'  
+LOGIN_URI = '/accounts/login/'
+# Where to redirect after successful login
+LOGIN_REDIRECT_URL = '/'
+
+# Where to redirect after logout
+LOGOUT_REDIRECT_URL = '/'
+SITE_ID = 1
+SOCIALACCOUNT_ONLY = True
+ACCOUNT_LOGOUT_ON_GET = True
+SOCIALACCOUNT_LOGIN_ON_GET=True
+ALLAUTH_UI_THEME = "dark"

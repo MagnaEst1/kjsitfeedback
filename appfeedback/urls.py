@@ -1,0 +1,35 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.home_view, name='home'),
+    path('dashboard/', views.dashboard_view, name='dashboard'),
+    
+    # Admin views for feedback management
+    path('admin-dashboard/', views.admin_dashboard_view, name='admin_dashboard'),
+    path('create-form/', views.create_feedback_form_view, name='create_feedback_form'),
+    path('manage-forms/', views.manage_feedback_forms_view, name='manage_feedback_forms'),
+    path('edit-form/<int:form_id>/', views.edit_feedback_form_view, name='edit_feedback_form'),
+    path('manage-questions/<int:form_id>/', views.manage_questions_view, name='manage_questions'),
+    path('add-question/<int:form_id>/', views.add_question_view, name='add_question'),
+    path('edit-question/<int:form_id>/<int:question_id>/', views.edit_question_view, name='edit_question'),
+    path('delete-question/<int:form_id>/<int:question_id>/', views.delete_question_view, name='delete_question'),
+    path('reorder-questions/<int:form_id>/', views.reorder_questions_view, name='reorder_questions'),
+    path('delete-form/<int:form_id>/', views.delete_feedback_form_view, name='delete_feedback_form'),
+    path('toggle-form/<int:form_id>/', views.toggle_form_status_view, name='toggle_form_status'),
+    path('view-responses/<int:form_id>/', views.view_feedback_responses, name='view_feedback_responses'),
+    path('delete-response/<int:form_id>/<int:response_id>/', views.delete_feedback_response, name='delete_feedback_response'),
+    path('bulk-delete-responses/<int:form_id>/', views.bulk_delete_responses, name='bulk_delete_responses'),
+    path('export-responses/<int:form_id>/', views.export_responses, name='export_responses'),
+    
+    # Student views
+    path('fill-feedback/<int:form_id>/', views.fill_feedback_form_view, name='fill_feedback_form'),
+    
+    # Professor views
+    path('professor-dashboard/', views.professor_dashboard_view, name='professor_dashboard'),
+    
+    # AJAX endpoints
+    path('ajax/get-subjects/', views.get_subjects_by_type, name='get_subjects_by_type'),
+    path('ajax/get-professors/', views.get_professors_by_subject_division, name='get_professors_by_subject_division'),
+    path('ajax/get-batches/', views.get_batches_by_division, name='get_batches_by_division'),
+]

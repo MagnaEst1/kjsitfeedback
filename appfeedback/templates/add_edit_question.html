@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Question - {{ feedback_form.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{{ action }} Question</h1>
+                <p class="mt-2 text-lg text-gray-600">{{ feedback_form.title }}</p>
+            </div>
+            <a href="{% url 'manage_questions' feedback_form.id %}" 
+               class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                ← Back to Questions
+            </a>
+        </div>
+    </div>
+
+    <!-- Question Form -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Question Details</h3>
+        </div>
+        
+        <form method="post" class="px-6 py-6 space-y-6">
+            {% csrf_token %}
+            
+            <!-- Question Text -->
+            <div>
+                <label for="{{ form.question_text.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Question Text <span class="text-red-500">*</span>
+                </label>
+                {{ form.question_text }}
+                {% if form.question_text.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {{ form.question_text.errors.0 }}
+                    </div>
+                {% endif %}
+                <p class="mt-1 text-sm text-gray-500">Enter the question that students will answer</p>
+            </div>
+            
+            <!-- Question Type -->
+            <div>
+                <label for="{{ form.question_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Question Type <span class="text-red-500">*</span>
+                </label>
+                {{ form.question_type }}
+                {% if form.question_type.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {{ form.question_type.errors.0 }}
+                    </div>
+                {% endif %}
+                <p class="mt-1 text-sm text-gray-500">Choose how students will respond to this question</p>
+            </div>
+            
+            <!-- Multiple Choice Options (shown only for multiple choice) -->
+            <div id="choices-section" style="display: none;">
+                <label for="{{ form.choices.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Multiple Choice Options
+                </label>
+                <div id="choices-container">
+                    <!-- Dynamic choice inputs will be added here -->
+                </div>
+                <button type="button" id="add-choice-btn" class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm">
+                    + Add Option
+                </button>
+                <p class="mt-1 text-sm text-gray-500">Add options for students to choose from</p>
+                <input type="hidden" id="{{ form.choices.id_for_label }}" name="{{ form.choices.name }}" value="{{ form.choices.value|default:'' }}">
+            </div>
+            
+            <!-- Order -->
+            <div>
+                <label for="{{ form.order.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Question Order
+                </label>
+                {{ form.order }}
+                {% if form.order.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {{ form.order.errors.0 }}
+                    </div>
+                {% endif %}
+                <p class="mt-1 text-sm text-gray-500">Leave blank to add at the end</p>
+            </div>
+            
+            <!-- Required -->
+            <div class="flex items-center">
+                {{ form.is_required }}
+                <label for="{{ form.is_required.id_for_label }}" class="ml-2 block text-sm text-gray-700">
+                    This question is required
+                </label>
+            </div>
+            
+            <!-- Submit Buttons -->
+            <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                <a href="{% url 'manage_questions' feedback_form.id %}" 
+                   class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded">
+                    Cancel
+                </a>
+                <button type="submit" 
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded">
+                    {{ action }} Question
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const questionTypeSelect = document.getElementById('{{ form.question_type.id_for_label }}');
+    const choicesSection = document.getElementById('choices-section');
+    const choicesContainer = document.getElementById('choices-container');
+    const addChoiceBtn = document.getElementById('add-choice-btn');
+    const choicesInput = document.getElementById('{{ form.choices.id_for_label }}');
+    
+    let choiceCount = 0;
+    let initialized = false;
+    
+    // Show/hide choices section based on question type
+    function toggleChoicesSection() {
+        if (questionTypeSelect.value === 'multiple_choice') {
+            choicesSection.style.display = 'block';
+            
+            // Initialize choices if editing existing question and not already initialized
+            {% if question and question.choices %}
+            if (!initialized) {
+                console.log('Loading existing choices:', {{ choices_json|safe }});
+                try {
+                    const existingChoices = {{ choices_json|safe }};
+                    if (Array.isArray(existingChoices) && existingChoices.length > 0) {
+                        // Clear any existing inputs first
+                        choicesContainer.innerHTML = '';
+                        choiceCount = 0;
+                        
+                        existingChoices.forEach(choice => {
+                            addChoiceInput(choice);
+                        });
+                        initialized = true;
+                        console.log('Successfully loaded', existingChoices.length, 'existing choices');
+                        return; // Don't add default empty choices
+                    }
+                } catch (e) {
+                    console.error('Error parsing existing choices:', e);
+                }
+            }
+            {% endif %}
+            
+            // Add default empty choices if no choices exist
+            if (choicesContainer.children.length === 0) {
+                addChoiceInput('');
+                addChoiceInput('');
+            }
+        } else {
+            choicesSection.style.display = 'none';
+        }
+    }
+    
+    // Add choice input
+    function addChoiceInput(value = '') {
+        choiceCount++;
+        const choiceDiv = document.createElement('div');
+        choiceDiv.className = 'flex items-center space-x-2 mb-2';
+        choiceDiv.innerHTML = `
+            <input type="text" 
+                   class="choice-input flex-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" 
+                   placeholder="Option ${choiceCount}" 
+                   value="${value}">
+            <button type="button" 
+                    class="remove-choice bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm">
+                ×
+            </button>
+        `;
+        choicesContainer.appendChild(choiceDiv);
+        
+        // Add remove functionality
+        choiceDiv.querySelector('.remove-choice').addEventListener('click', function() {
+            choiceDiv.remove();
+            updateChoicesInput();
+        });
+        
+        // Add change listener
+        choiceDiv.querySelector('.choice-input').addEventListener('input', updateChoicesInput);
+        
+        updateChoicesInput();
+    }
+    
+    // Update hidden choices input
+    function updateChoicesInput() {
+        const choices = Array.from(document.querySelectorAll('.choice-input'))
+            .map(input => input.value.trim())
+            .filter(value => value !== '');
+        choicesInput.value = JSON.stringify(choices);
+    }
+    
+    // Event listeners
+    questionTypeSelect.addEventListener('change', function() {
+        // Clear existing choices when changing question type
+        if (this.value !== 'multiple_choice') {
+            choicesContainer.innerHTML = '';
+            initialized = false;
+        }
+        toggleChoicesSection();
+    });
+    
+    addChoiceBtn.addEventListener('click', () => addChoiceInput(''));
+    
+    // Initialize - this will set up the form based on current question type
+    toggleChoicesSection();
+});
+</script>
+{% endblock %}

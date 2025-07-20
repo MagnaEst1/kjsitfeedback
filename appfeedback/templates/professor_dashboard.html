@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Professor Dashboard - KJSIT Feedback{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Professor Dashboard</h1>
+        <p class="text-gray-600">Welcome, {{ professor.user.get_full_name }}!</p>
+        <p class="text-sm text-gray-500">Employee ID: {{ professor.employee_id }} | Department: {{ professor.department }}</p>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
+            <h3 class="text-lg font-semibold mb-2">Total Forms</h3>
+            <p class="text-3xl font-bold">{{ forms.count }}</p>
+        </div>
+        <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-6 text-white">
+            <h3 class="text-lg font-semibold mb-2">Total Responses</h3>
+            <p class="text-3xl font-bold">{{ total_responses }}</p>
+        </div>
+        <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-6 text-white">
+            <h3 class="text-lg font-semibold mb-2">Average Rating</h3>
+            <p class="text-3xl font-bold">4.2/5</p>
+        </div>
+    </div>
+
+    <!-- Feedback Forms -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Your Feedback Forms</h2>
+        
+        {% if forms %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Form Title
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Subject
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Division/Batch
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Responses
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Period
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for form in forms %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ form.title }}</div>
+                                    {% if form.description %}
+                                        <div class="text-xs text-gray-500">{{ form.description|truncatewords:8 }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">{{ form.subject.name }}</div>
+                                    <div class="text-xs text-gray-500">{{ form.subject.get_subject_type_display }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">{{ form.division }}</div>
+                                    {% if form.practical_batch %}
+                                        <div class="text-xs text-gray-500">{{ form.practical_batch.name }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if form.is_active %}
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                            Active
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                            Inactive
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {{ form.responses.count }} responses
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-xs text-gray-500">
+                                        <div>{{ form.start_date|date:"M d" }} - {{ form.end_date|date:"M d, Y" }}</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-8">
+                <div class="text-gray-400 mb-4">
+                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No feedback forms assigned</h3>
+                <p class="text-gray-500">No feedback forms have been created for your subjects yet. Contact the administrator to create feedback forms.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="bg-gray-50 rounded-lg p-6 mt-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
+        <div class="space-y-3">
+            <div class="flex items-center text-sm text-gray-600">
+                <div class="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
+                <span>System setup completed - Default data loaded</span>
+            </div>
+            <div class="flex items-center text-sm text-gray-600">
+                <div class="w-2 h-2 bg-blue-400 rounded-full mr-3"></div>
+                <span>Professor profile created for {{ professor.user.get_full_name }}</span>
+            </div>
+            <div class="flex items-center text-sm text-gray-600">
+                <div class="w-2 h-2 bg-purple-400 rounded-full mr-3"></div>
+                <span>Ready to receive feedback forms from administrators</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

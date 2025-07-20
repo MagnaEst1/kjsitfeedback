@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ feedback_form.title }} - KJSIT Feedback{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Edit Feedback Form</h1>
+        <p class="text-gray-600">Modify the details of "{{ feedback_form.title }}"</p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <form method="post" id="feedback-form">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Form Title -->
+                <div class="md:col-span-2">
+                    <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Form Title *
+                    </label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.title.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Description -->
+                <div class="md:col-span-2">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Description
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Division (First) -->
+                <div>
+                    <label for="{{ form.division.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Division *
+                    </label>
+                    {{ form.division }}
+                    {% if form.division.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.division.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Subject Type (Second) -->
+                <div>
+                    <label for="{{ form.subject_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Subject Type *
+                    </label>
+                    {{ form.subject_type }}
+                    {% if form.subject_type.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.subject_type.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Practical Batch (Third - conditional) -->
+                <div id="practical-batch-field" class="md:col-span-2" 
+                     style="display: {% if feedback_form.subject.subject_type == 'practical' %}block{% else %}none{% endif %};">
+                    <label for="{{ form.practical_batch.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Practical Batch * (Required for Practical subjects)
+                    </label>
+                    {{ form.practical_batch }}
+                    {% if form.practical_batch.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.practical_batch.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Subject (Fourth) -->
+                <div>
+                    <label for="{{ form.subject.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Subject *
+                    </label>
+                    {{ form.subject }}
+                    {% if form.subject.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.subject.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Professor (Fifth) -->
+                <div>
+                    <label for="{{ form.professor.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Professor *
+                    </label>
+                    {{ form.professor }}
+                    {% if form.professor.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.professor.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Start Date -->
+                <div>
+                    <label for="{{ form.start_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Start Date *
+                    </label>
+                    {{ form.start_date }}
+                    {% if form.start_date.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.start_date.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- End Date -->
+                <div>
+                    <label for="{{ form.end_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        End Date *
+                    </label>
+                    {{ form.end_date }}
+                    {% if form.end_date.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.end_date.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Is Active -->
+                <div>
+                    <div class="flex items-center">
+                        {{ form.is_active }}
+                        <label for="{{ form.is_active.id_for_label }}" class="ml-2 text-sm font-medium text-gray-700">
+                            Form is active (students can submit responses)
+                        </label>
+                    </div>
+                    {% if form.is_active.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.is_active.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Allow Anonymous -->
+                <div>
+                    <div class="flex items-center">
+                        {{ form.allow_anonymous }}
+                        <label for="{{ form.allow_anonymous.id_for_label }}" class="ml-2 text-sm font-medium text-gray-700">
+                            Allow anonymous feedback (hide student names in responses)
+                        </label>
+                    </div>
+                    {% if form.allow_anonymous.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.allow_anonymous.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+                        {{ form.is_active }}
+                        <label for="{{ form.is_active.id_for_label }}" class="ml-2 text-sm font-medium text-gray-700">
+                            Form is active (students can submit responses)
+                        </label>
+                    </div>
+                    {% if form.is_active.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.is_active.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Non-field errors -->
+            {% if form.non_field_errors %}
+                <div class="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Form Actions -->
+            <div class="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+                <a href="{% url 'manage_feedback_forms' %}" 
+                   class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                    Cancel
+                </a>
+                <button type="submit" 
+                        class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                    Update Form
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Form Statistics -->
+    <div class="bg-gray-50 rounded-lg p-6 mt-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Form Statistics</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="text-center">
+                <p class="text-2xl font-bold text-blue-600">{{ feedback_form.responses.count }}</p>
+                <p class="text-sm text-gray-600">Total Responses</p>
+            </div>
+            <div class="text-center">
+                <p class="text-2xl font-bold text-green-600">{{ feedback_form.questions.count }}</p>
+                <p class="text-sm text-gray-600">Questions</p>
+            </div>
+            <div class="text-center">
+                <p class="text-2xl font-bold text-purple-600">
+                    {% if feedback_form.is_active %}Active{% else %}Inactive{% endif %}
+                </p>
+                <p class="text-sm text-gray-600">Current Status</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning for existing responses -->
+    {% if feedback_form.responses.count > 0 %}
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-yellow-800">
+                        Caution: This form has {{ feedback_form.responses.count }} existing response{{ feedback_form.responses.count|pluralize }}
+                    </h3>
+                    <div class="mt-2 text-sm text-yellow-700">
+                        <p>Making significant changes to a form with existing responses may affect data consistency. Consider creating a new form for major changes.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const divisionField = document.getElementById('{{ form.division.id_for_label }}');
+    const subjectTypeField = document.getElementById('{{ form.subject_type.id_for_label }}');
+    const practicalBatchField = document.getElementById('practical-batch-field');
+    const practicalBatchSelect = document.getElementById('{{ form.practical_batch.id_for_label }}');
+    const subjectField = document.getElementById('{{ form.subject.id_for_label }}');
+    const professorField = document.getElementById('{{ form.professor.id_for_label }}');
+    const titleField = document.getElementById('{{ form.title.id_for_label }}');
+    
+    // Initialize form based on existing values
+    initializeForm();
+    
+    // Step 1: Handle division change
+    divisionField.addEventListener('change', function() {
+        resetDependentFields(['subject', 'professor']);
+        updateBatches();
+        updateSubjects();
+        updateProfessors();
+    });
+    
+    // Step 2: Handle subject type change
+    subjectTypeField.addEventListener('change', function() {
+        const subjectType = this.value;
+        resetDependentFields(['practical_batch', 'subject', 'professor']);
+        
+        // Show/hide practical batch field based on subject type
+        if (subjectType === 'practical') {
+            practicalBatchField.style.display = 'block';
+            updateBatches();
+        } else {
+            practicalBatchField.style.display = 'none';
+            updateSubjects(); // For theory/SAT subjects, directly update subjects
+        }
+    });
+    
+    // Step 3: Handle practical batch change (for practical/SAT subjects)
+    practicalBatchSelect.addEventListener('change', function() {
+        resetDependentFields(['subject', 'professor']);
+        updateSubjects();
+    });
+    
+    // Step 4: Handle subject change
+    subjectField.addEventListener('change', function() {
+        resetDependentFields(['professor']);
+        updateProfessors();
+        generateTitle();
+    });
+    
+    // Also update title when division changes
+    divisionField.addEventListener('change', generateTitle);
+    
+    function initializeForm() {
+        // Set initial visibility of practical batch field
+        const currentSubjectType = subjectTypeField.value;
+        if (currentSubjectType === 'practical' || currentSubjectType === 'sat') {
+            practicalBatchField.style.display = 'block';
+        }
+    }
+    
+    function resetDependentFields(fields) {
+        if (fields.includes('practical_batch')) {
+            practicalBatchSelect.innerHTML = '<option value="">--- Select Batch ---</option>';
+        }
+        if (fields.includes('subject')) {
+            // Keep current selection but refresh options
+            const currentValue = subjectField.value;
+            subjectField.innerHTML = '<option value="">--- Select Subject ---</option>';
+            // We'll restore the value after updating if it's still valid
+        }
+        if (fields.includes('professor')) {
+            // Keep current selection but refresh options  
+            const currentValue = professorField.value;
+            professorField.innerHTML = '<option value="">--- Select Professor ---</option>';
+        }
+    }
+    
+    function updateBatches() {
+        const divisionId = divisionField.value;
+        const currentBatch = practicalBatchSelect.value;
+        
+        practicalBatchSelect.innerHTML = '<option value="">--- Select Batch ---</option>';
+        
+        if (divisionId) {
+            fetch(`/ajax/get-batches/?division_id=${divisionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.batches.forEach(batch => {
+                        const option = new Option(batch.name, batch.id);
+                        practicalBatchSelect.add(option);
+                    });
+                    // Restore previous selection if still valid
+                    if (currentBatch) {
+                        practicalBatchSelect.value = currentBatch;
+                    }
+                })
+                .catch(error => console.error('Error fetching batches:', error));
+        }
+    }
+    
+    function updateSubjects() {
+        const subjectType = subjectTypeField.value;
+        const divisionId = divisionField.value;
+        const practicalBatchId = practicalBatchSelect.value;
+        const currentSubject = subjectField.value;
+        
+        subjectField.innerHTML = '<option value="">--- Select Subject ---</option>';
+        
+        if (subjectType && divisionId) {
+            let url = `/ajax/get-subjects/?subject_type=${subjectType}&division_id=${divisionId}`;
+            
+            // For practical subjects, also include batch
+            if (subjectType === 'practical' && practicalBatchId) {
+                url += `&practical_batch_id=${practicalBatchId}`;
+            }
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    data.subjects.forEach(subject => {
+                        const option = new Option(
+                            `${subject.code} - ${subject.name} (Year ${subject.year})`,
+                            subject.id
+                        );
+                        subjectField.add(option);
+                    });
+                    // Restore previous selection if still valid
+                    if (currentSubject) {
+                        subjectField.value = currentSubject;
+                    }
+                })
+                .catch(error => console.error('Error fetching subjects:', error));
+        }
+    }
+    
+    function updateProfessors() {
+        const subjectId = subjectField.value;
+        const divisionId = divisionField.value;
+        const practicalBatchId = practicalBatchSelect.value;
+        const currentProfessor = professorField.value;
+        
+        professorField.innerHTML = '<option value="">--- Select Professor ---</option>';
+        
+        if (subjectId && divisionId) {
+            let url = `/ajax/get-professors/?subject_id=${subjectId}&division_id=${divisionId}`;
+            
+            // For practical subjects, also include batch
+            if (practicalBatchId) {
+                url += `&practical_batch_id=${practicalBatchId}`;
+            }
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    data.professors.forEach(professor => {
+                        const option = new Option(professor.name, professor.id);
+                        professorField.add(option);
+                    });
+                    // Restore previous selection if still valid
+                    if (currentProfessor) {
+                        professorField.value = currentProfessor;
+                    }
+                })
+                .catch(error => console.error('Error fetching professors:', error));
+        }
+    }
+    
+    function generateTitle() {
+        const subjectId = subjectField.value;
+        const divisionId = divisionField.value;
+        
+        if (subjectId && divisionId) {
+            const subjectText = subjectField.options[subjectField.selectedIndex].text;
+            const divisionText = divisionField.options[divisionField.selectedIndex].text;
+            const subjectName = subjectText.split(' - ')[1].split(' (')[0];
+            titleField.value = `Feedback for ${subjectName} - ${divisionText}`;
+        }
+    }
+});
+</script>
+{% endblock %}

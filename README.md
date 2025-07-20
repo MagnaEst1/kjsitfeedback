@@ -1,4 +1,4 @@
-# KJSIT Feedback Portal
+# KJSIT Feedback 
 
 This project uses **Django** for the backend and **React + Vite + TSX** for the frontend. A custom Python script automates:
 
@@ -30,6 +30,7 @@ This project uses **Django** for the backend and **React + Vite + TSX** for the 
 
 ### UV
     curl -LsSf https://astral.sh/uv/install.sh | sh 
+
     powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
     uv install
@@ -53,7 +54,7 @@ This project uses **Django** for the backend and **React + Vite + TSX** for the 
 
 ### Run Only Frontend (React + Vite)
 
-    iv run.py --frontend
+    uv run.py --frontend
 
 ---
 
@@ -66,6 +67,3 @@ This project uses **Django** for the backend and **React + Vite + TSX** for the 
 
 ---
 
-## 📝 License
-
-This project is licensed under the MIT License.

@@ -1,15 +1,16 @@
-import subprocess 
+import subprocess
 import threading
 import argparse
 import os
 import platform
+import sys
 
 # Paths
 DJANGO_MANAGE_PATH = os.path.join(os.getcwd(), "manage.py")
 VITE_DIR = os.path.join(os.getcwd(), "kjsitfeedbackvite")
+IS_WINDOWS = platform.system() == "Windows"
 
 # Commands
-IS_WINDOWS = platform.system() == "Windows"
 BACKEND_COMMAND = ["uv", "run", DJANGO_MANAGE_PATH, "runserver"]
 FRONTEND_COMMAND = (
     f'cmd.exe /c "cd {VITE_DIR} && npm run dev"' if IS_WINDOWS else ["npm", "run", "dev"]
@@ -22,7 +23,7 @@ def stream_process(prefix, command, shell=False):
         stderr=subprocess.STDOUT,
         text=True,
         shell=shell,
-        bufsize=1  # line-buffered
+        bufsize=1
     )
     for line in iter(process.stdout.readline, ''):
         print(f"[{prefix}] {line}", end='', flush=True)
@@ -30,15 +31,14 @@ def stream_process(prefix, command, shell=False):
     process.wait()
 
 def run_migrations():
-    print("Running makemigrations...")
-    subprocess.run(["python", DJANGO_MANAGE_PATH, "makemigrations"], check=True)
-    print("Running migrate...")
-    subprocess.run(["python", DJANGO_MANAGE_PATH, "migrate"], check=True)
+    print("[BACKEND] Running makemigrations and migrate with uv...")
+    subprocess.run(["uv", "run", DJANGO_MANAGE_PATH, "makemigrations"], check=True)
+    subprocess.run(["uv", "run", DJANGO_MANAGE_PATH, "migrate"], check=True)
 
 def run_backend():
-    print("Starting Django backend...")
+    print("Starting Django backend with uv...")
     run_migrations()
-    stream_process("BACKEND", BACKEND_COMMAND, shell=False)
+    stream_process("BACKEND", BACKEND_COMMAND)
 
 def run_frontend():
     print("Starting Vite frontend...")
@@ -49,12 +49,10 @@ def main():
     parser = argparse.ArgumentParser(description="Run frontend, backend, or both.")
     parser.add_argument("--frontend", action="store_true", help="Run Vite frontend only")
     parser.add_argument("--backend", action="store_true", help="Run Django backend only")
-
     args = parser.parse_args()
-    threads = []
 
+    threads = []
     if args.frontend and args.backend:
-        print("Running both frontend and backend...")
         threads.append(threading.Thread(target=run_backend))
         threads.append(threading.Thread(target=run_frontend))
     elif args.frontend:
