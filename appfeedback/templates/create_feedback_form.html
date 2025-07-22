@@ -3,20 +3,20 @@
 {% block title %}Create Feedback Form - KJSIT Feedback{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Create Feedback Form</h1>
-        <p class="text-gray-600">Create a new feedback form for students to evaluate professors</p>
+<div class="max-w-4xl mx-auto p-4">
+    <div class="bg-white rounded-lg shadow-lg shadow-neutral-500 border border-[#a50c22] p-6 mb-6">
+        <h1 class="text-3xl font-extrabold text-[#a50c22] mb-2">Create Feedback Form</h1>
+        <p class="text-black text-lg">Create a new feedback form for students to evaluate professors</p>
     </div>
 
-    <div class="bg-white rounded-lg shadow-lg p-6">
+    <div class="bg-white rounded-lg shadow-lg shadow-neutral-500 border border-[#a50c22] p-6">
         <form method="post" id="feedback-form">
             {% csrf_token %}
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Form Title -->
                 <div class="md:col-span-2">
-                    <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium  mb-2">
                         Form Title *
                     </label>
                     {{ form.title }}
@@ -27,7 +27,7 @@
 
                 <!-- Description -->
                 <div class="md:col-span-2">
-                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Description
                     </label>
                     {{ form.description }}
@@ -38,7 +38,7 @@
 
                 <!-- Division (First) -->
                 <div>
-                    <label for="{{ form.division.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.division.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Division *
                     </label>
                     {{ form.division }}
@@ -49,7 +49,7 @@
 
                 <!-- Subject Type (Second) -->
                 <div>
-                    <label for="{{ form.subject_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.subject_type.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Subject Type *
                     </label>
                     {{ form.subject_type }}
@@ -60,7 +60,7 @@
 
                 <!-- Practical Batch (Third - conditional) -->
                 <div id="practical-batch-field" class="md:col-span-2" style="display: none;">
-                    <label for="{{ form.practical_batch.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.practical_batch.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Practical Batch * (Required for Practical subjects)
                     </label>
                     {{ form.practical_batch }}
@@ -71,7 +71,7 @@
 
                 <!-- Subject (Fourth) -->
                 <div>
-                    <label for="{{ form.subject.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.subject.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Subject *
                     </label>
                     {{ form.subject }}
@@ -82,7 +82,7 @@
 
                 <!-- Professor (Fifth) -->
                 <div>
-                    <label for="{{ form.professor.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.professor.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Professor *
                     </label>
                     {{ form.professor }}
@@ -93,7 +93,7 @@
 
                 <!-- Start Date -->
                 <div>
-                    <label for="{{ form.start_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.start_date.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Start Date *
                     </label>
                     {{ form.start_date }}
@@ -104,7 +104,7 @@
 
                 <!-- End Date -->
                 <div>
-                    <label for="{{ form.end_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.end_date.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         End Date *
                     </label>
                     {{ form.end_date }}
@@ -117,7 +117,7 @@
                 <div>
                     <div class="flex items-center">
                         {{ form.is_active }}
-                        <label for="{{ form.is_active.id_for_label }}" class="ml-2 text-sm font-medium text-gray-700">
+                        <label for="{{ form.is_active.id_for_label }}" class="ml-2 text-sm font-medium text-black">
                             Form is active (students can submit responses)
                         </label>
                     </div>
@@ -130,7 +130,7 @@
                 <div>
                     <div class="flex items-center">
                         {{ form.allow_anonymous }}
-                        <label for="{{ form.allow_anonymous.id_for_label }}" class="ml-2 text-sm font-medium text-gray-700">
+                        <label for="{{ form.allow_anonymous.id_for_label }}" class="ml-2 text-sm font-medium text-black">
                             Allow anonymous feedback (hide student names in responses)
                         </label>
                     </div>
@@ -152,11 +152,11 @@
             <!-- Form Actions -->
             <div class="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
                 <a href="{% url 'manage_feedback_forms' %}" 
-                   class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                   class="px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-900 transition">
                     Cancel
                 </a>
                 <button type="submit" 
-                        class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                        class="px-6 py-2 bg-green-700 text-white rounded-lg hover:bg-green-900 transition">
                     Create Form
                 </button>
             </div>
@@ -164,9 +164,9 @@
     </div>
 
     <!-- Information Box -->
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-        <h3 class="text-lg font-semibold text-blue-800 mb-2">Information</h3>
-        <ul class="text-sm text-blue-700 space-y-1">
+    <div class="bg-[#a50c22]/10 border border-[#a50c22]/30 rounded-lg p-4 mt-6">
+        <h3 class="text-lg font-semibold text-[#a50c22] mb-2">Information</h3>
+        <ul class="text-sm text-[#a50c22]/80 space-y-1">
             <li>• Default questions will be automatically added to the form</li>
             <li>• For practical subjects, you must select a practical batch</li>
             <li>• For theory/SAT subjects, practical batch should be left empty</li>

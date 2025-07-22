@@ -3,20 +3,20 @@
 {% block title %}Edit {{ feedback_form.title }} - KJSIT Feedback{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Edit Feedback Form</h1>
-        <p class="text-gray-600">Modify the details of "{{ feedback_form.title }}"</p>
+<div class="max-w-4xl mx-auto p-4">
+    <div class="bg-white rounded-lg shadow-lg shadow-neutral-500 border border-[#a50c22] p-6 mb-6">
+        <h1 class="text-3xl font-extrabold text-[#a50c22] mb-2">Edit Feedback Form</h1>
+        <p class="text-black text-lg">Modify the details of "{{ feedback_form.title }}"</p>
     </div>
 
-    <div class="bg-white rounded-lg shadow-lg p-6">
+    <div class="bg-white rounded-lg shadow-lg shadow-neutral-500 border border-[#a50c22] p-6">
         <form method="post" id="feedback-form">
             {% csrf_token %}
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Form Title -->
                 <div class="md:col-span-2">
-                    <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Form Title *
                     </label>
                     {{ form.title }}
@@ -27,7 +27,7 @@
 
                 <!-- Description -->
                 <div class="md:col-span-2">
-                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Description
                     </label>
                     {{ form.description }}
@@ -38,7 +38,7 @@
 
                 <!-- Division (First) -->
                 <div>
-                    <label for="{{ form.division.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.division.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Division *
                     </label>
                     {{ form.division }}
@@ -49,7 +49,7 @@
 
                 <!-- Subject Type (Second) -->
                 <div>
-                    <label for="{{ form.subject_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.subject_type.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Subject Type *
                     </label>
                     {{ form.subject_type }}
@@ -61,7 +61,7 @@
                 <!-- Practical Batch (Third - conditional) -->
                 <div id="practical-batch-field" class="md:col-span-2" 
                      style="display: {% if feedback_form.subject.subject_type == 'practical' %}block{% else %}none{% endif %};">
-                    <label for="{{ form.practical_batch.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.practical_batch.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Practical Batch * (Required for Practical subjects)
                     </label>
                     {{ form.practical_batch }}
@@ -72,7 +72,7 @@
 
                 <!-- Subject (Fourth) -->
                 <div>
-                    <label for="{{ form.subject.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.subject.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Subject *
                     </label>
                     {{ form.subject }}
@@ -83,7 +83,7 @@
 
                 <!-- Professor (Fifth) -->
                 <div>
-                    <label for="{{ form.professor.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.professor.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Professor *
                     </label>
                     {{ form.professor }}
@@ -94,7 +94,7 @@
 
                 <!-- Start Date -->
                 <div>
-                    <label for="{{ form.start_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.start_date.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         Start Date *
                     </label>
                     {{ form.start_date }}
@@ -105,7 +105,7 @@
 
                 <!-- End Date -->
                 <div>
-                    <label for="{{ form.end_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.end_date.id_for_label }}" class="block text-sm font-medium text-black mb-2">
                         End Date *
                     </label>
                     {{ form.end_date }}
@@ -118,7 +118,7 @@
                 <div>
                     <div class="flex items-center">
                         {{ form.is_active }}
-                        <label for="{{ form.is_active.id_for_label }}" class="ml-2 text-sm font-medium text-gray-700">
+                        <label for="{{ form.is_active.id_for_label }}" class="ml-2 text-sm font-medium text-black">
                             Form is active (students can submit responses)
                         </label>
                     </div>
@@ -131,22 +131,12 @@
                 <div>
                     <div class="flex items-center">
                         {{ form.allow_anonymous }}
-                        <label for="{{ form.allow_anonymous.id_for_label }}" class="ml-2 text-sm font-medium text-gray-700">
+                        <label for="{{ form.allow_anonymous.id_for_label }}" class="ml-2 text-sm font-medium text-black">
                             Allow anonymous feedback (hide student names in responses)
                         </label>
                     </div>
                     {% if form.allow_anonymous.errors %}
                         <p class="mt-1 text-sm text-red-600">{{ form.allow_anonymous.errors.0 }}</p>
-                    {% endif %}
-                </div>
-            </div>
-                        {{ form.is_active }}
-                        <label for="{{ form.is_active.id_for_label }}" class="ml-2 text-sm font-medium text-gray-700">
-                            Form is active (students can submit responses)
-                        </label>
-                    </div>
-                    {% if form.is_active.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.is_active.errors.0 }}</p>
                     {% endif %}
                 </div>
             </div>
@@ -167,7 +157,7 @@
                     Cancel
                 </a>
                 <button type="submit" 
-                        class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                        class="px-6 py-2 bg-[#a50c22] text-white rounded-lg hover:bg-black transition">
                     Update Form
                 </button>
             </div>
