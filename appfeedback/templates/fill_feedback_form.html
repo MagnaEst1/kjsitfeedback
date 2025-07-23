@@ -3,51 +3,109 @@
 {% block title %}{{ form.title }} - KJSIT Feedback{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
-    <!-- Form Header -->
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ form.title }}</h1>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-            <div>
-                <p><strong>Subject:</strong> {{ form.subject.name }} ({{ form.subject.get_subject_type_display }})</p>
-                <p><strong>Professor:</strong> {{ form.professor.user.get_full_name }}</p>
+<div class="max-w-4xl mx-auto p-4">
+    <!-- Enhanced Form Header -->
+    <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 mb-8 relative overflow-hidden">
+        <!-- Background decorative elements -->
+        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-kjsit-red/10 to-kjsit-red-light/10 rounded-full -translate-y-16 translate-x-16"></div>
+        <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-kjsit-red-light/10 to-kjsit-red/10 rounded-full translate-y-12 -translate-x-12"></div>
+        
+        <div class="relative z-10">
+            <div class="flex items-center space-x-4 mb-6">
+                <div class="w-16 h-16 bg-gradient-to-br from-kjsit-red via-kjsit-red-light to-kjsit-red/80 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-4xl font-extrabold bg-gradient-to-r from-kjsit-red to-kjsit-red-light bg-clip-text text-transparent mb-2">{{ form.title }}</h1>
+                </div>
             </div>
-            <div>
-                <p><strong>Division:</strong> {{ form.division }}</p>
-                {% if form.practical_batch %}
-                    <p><strong>Batch:</strong> {{ form.practical_batch.name }}</p>
-                {% endif %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-3">
+                    <div class="flex items-center space-x-3 p-3 bg-kjsit-red/5 rounded-lg border border-kjsit-red/20">
+                        <svg class="w-5 h-5 text-kjsit-red flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-bold text-gray-700">Subject</p>
+                            <p class="text-sm text-kjsit-red font-semibold">{{ form.subject.name }} ({{ form.subject.get_subject_type_display }})</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-3 p-3 bg-kjsit-red/5 rounded-lg border border-kjsit-red/20">
+                        <svg class="w-5 h-5 text-kjsit-red flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-bold text-gray-700">Professor</p>
+                            <p class="text-sm text-kjsit-red font-semibold">{{ form.professor.user.get_full_name }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center space-x-3 p-3 bg-kjsit-red/5 rounded-lg border border-kjsit-red/20">
+                        <svg class="w-5 h-5 text-kjsit-red flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-bold text-gray-700">Division</p>
+                            <p class="text-sm text-kjsit-red font-semibold">{{ form.division }}
+                            {% if form.practical_batch %}
+                                - {{ form.practical_batch.name }}
+                            {% endif %}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
+            
+            {% if form.description %}
+                <div class="mt-6 p-4 bg-gradient-to-r from-kjsit-red/10 to-kjsit-red/5 rounded-xl border border-kjsit-red/20">
+                    <div class="flex items-start space-x-3">
+                        <svg class="w-5 h-5 text-kjsit-red mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="text-gray-700 text-sm leading-relaxed">{{ form.description }}</p>
+                    </div>
+                </div>
+            {% endif %}
         </div>
-        {% if form.description %}
-            <div class="mt-4 p-4 bg-gray-50 rounded-lg">
-                <p class="text-gray-700">{{ form.description }}</p>
-            </div>
-        {% endif %}
     </div>
 
-    <!-- Feedback Form -->
-    <div class="bg-white rounded-lg shadow-lg p-6">
-        <form method="post" id="feedback-response-form">
-            {% csrf_token %}
-            
-            <!-- Privacy Option -->
-            <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div class="flex items-center">
-                    <input type="checkbox" id="is_anonymous" name="is_anonymous" checked 
-                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                    <label for="is_anonymous" class="ml-2 text-sm font-medium text-blue-900">
-                        Submit anonymously (recommended)
-                    </label>
+    <!-- Enhanced Feedback Form -->
+    <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-kjsit-red/5 to-kjsit-red-light/5 rounded-full -translate-y-16 translate-x-16"></div>
+        
+        <div class="relative z-10">
+            <form method="post" id="feedback-response-form" class="space-y-8">
+                {% csrf_token %}
+                
+                <!-- Enhanced Privacy Option -->
+                <div class="bg-gradient-to-r from-kjsit-red/10 to-kjsit-red/5 rounded-xl p-6 border border-kjsit-red/20">
+                    <div class="flex items-start space-x-4">
+                        <div class="flex-shrink-0 pt-1">
+                            <input type="checkbox" id="is_anonymous" name="is_anonymous" checked 
+                                   class="h-5 w-5 text-kjsit-red focus:ring-kjsit-red border-kjsit-red/30 rounded transition-all duration-300 hover:scale-110">
+                        </div>
+                        <div class="flex-1">
+                            <label for="is_anonymous" class="flex items-center space-x-2 text-sm font-bold text-gray-700 cursor-pointer">
+                                <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span>Submit anonymously (recommended)</span>
+                            </label>
+                            <p class="text-xs text-gray-600 mt-2 leading-relaxed">
+                                When checked, your identity will not be revealed to professors. Only admins can see who submitted responses.
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <p class="text-xs text-blue-700 mt-1">
-                    When checked, your identity will not be revealed to professors. Only admins can see who submitted responses.
-                </p>
-            </div>
 
-            <!-- Questions -->
-            <div class="space-y-6">
-                {% for question in questions %}
+                <!-- Enhanced Questions Section -->
+                <div class="space-y-8">
+                    {% for question in questions %}
                     <div class="border border-gray-200 rounded-lg p-4">
                         <label class="block text-sm font-medium text-gray-900 mb-3">
                             {{ forloop.counter }}. {{ question.question_text }}

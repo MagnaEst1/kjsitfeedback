@@ -1,12 +1,20 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
 from django.db.models import Max
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.forms import formset_factory
 from django.core.exceptions import ValidationError
+import pandas as pd
+import openpyxl
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+from io import BytesIO
 from .models import (
     Division, Professor, Subject, PracticalBatch, Student, 
     TeacherAssignment, FeedbackForm, FeedbackQuestion, 
@@ -20,6 +28,36 @@ from .forms import (
 
 def home_view(request):
     return render(request, 'home.html')
+
+
+def admin_login_view(request):
+    """Admin login view with username autofilled as 'admin' and staff-only access"""
+    if request.user.is_authenticated:
+        if request.user.is_staff:
+            return redirect('dashboard')
+        else:
+            messages.error(request, "Access denied. Staff accounts only.")
+            return redirect('login')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        if username and password:
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                if user.is_staff:
+                    login(request, user)
+                    messages.success(request, f"Welcome back, {user.get_full_name() or user.username}!")
+                    return redirect('dashboard')
+                else:
+                    messages.error(request, "Access denied. This login is for staff accounts only.")
+            else:
+                messages.error(request, "Invalid username or password.")
+        else:
+            messages.error(request, "Please provide both username and password.")
+    
+    return render(request, 'admin_login.html')
 
 
 @login_required
@@ -115,27 +153,38 @@ def create_feedback_form_view(request):
                     feedback_form.created_by = request.user
                     feedback_form.save()
                     
-                    # Create default questions if none exist
-                    default_questions = [
-                        {"text": "Rate the overall teaching quality", "type": "rating", "order": 1},
-                        {"text": "How would you rate the clarity of explanations?", "type": "rating", "order": 2},
-                        {"text": "Rate the professor's punctuality", "type": "rating", "order": 3},
-                        {"text": "How helpful was the professor in addressing doubts?", "type": "rating", "order": 4},
-                        {"text": "Any additional comments or suggestions", "type": "text", "order": 5, "required": False},
-                    ]
+                    # Handle questions data from the dynamic form
+                    questions_data = request.POST.get('questions_data')
+                    if questions_data:
+                        try:
+                            import json
+                            questions = json.loads(questions_data)
+                            
+                            for index, q_data in enumerate(questions, 1):
+                                question = FeedbackQuestion(
+                                    form=feedback_form,
+                                    question_text=q_data["text"],
+                                    question_type=q_data["type"],
+                                    order=index,
+                                    is_required=q_data.get("required", True)
+                                )
+                                
+                                # Handle multiple choice questions
+                                if q_data["type"] == "multiple_choice" and "choices" in q_data:
+                                    question.choices = q_data["choices"]
+                                
+                                question.save()
+                                
+                            questions_count = len(questions)
+                        except (json.JSONDecodeError, KeyError) as e:
+                            # Fall back to default questions if JSON parsing fails
+                            questions_count = _create_default_questions(feedback_form)
+                    else:
+                        # Create default questions if no questions data provided
+                        questions_count = _create_default_questions(feedback_form)
                     
-                    for q_data in default_questions:
-                        question = FeedbackQuestion(
-                            form=feedback_form,
-                            question_text=q_data["text"],
-                            question_type=q_data["type"],
-                            order=q_data["order"],
-                            is_required=q_data.get("required", True)
-                        )
-                        question.save()
-                    
-                    messages.success(request, f'Feedback form "{feedback_form.title}" created successfully!')
-                    return redirect('manage_feedback_forms')
+                    messages.success(request, f'Feedback form "{feedback_form.title}" created successfully with {questions_count} questions! You can now customize, add more questions, or activate the form.')
+                    return redirect('manage_questions', form_id=feedback_form.id)
                     
             except ValidationError as e:
                 messages.error(request, f"Error creating form: {e}")
@@ -150,7 +199,30 @@ def create_feedback_form_view(request):
     else:
         form = FeedbackFormCreationForm()
     
-    return render(request, 'create_feedback_form.html', {'form': form})
+    return render(request, 'create_feedback_form_new.html', {'form': form})
+
+
+def _create_default_questions(feedback_form):
+    """Helper method to create default questions"""
+    default_questions = [
+        {"text": "Rate the overall teaching quality", "type": "rating", "order": 1},
+        {"text": "How would you rate the clarity of explanations?", "type": "rating", "order": 2},
+        {"text": "Rate the professor's punctuality", "type": "rating", "order": 3},
+        {"text": "How helpful was the professor in addressing doubts?", "type": "rating", "order": 4},
+        {"text": "Any additional comments or suggestions", "type": "text", "order": 5, "required": False},
+    ]
+    
+    for q_data in default_questions:
+        question = FeedbackQuestion(
+            form=feedback_form,
+            question_text=q_data["text"],
+            question_type=q_data["type"],
+            order=q_data["order"],
+            is_required=q_data.get("required", True)
+        )
+        question.save()
+    
+    return len(default_questions)
 
 
 @login_required
@@ -310,6 +382,91 @@ def reorder_questions_view(request, form_id):
                     ).update(order=new_order)
             
             return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+@user_passes_test(is_admin)
+def update_question_ajax(request, form_id, question_id):
+    """Update a question via AJAX for inline editing"""
+    feedback_form = get_object_or_404(FeedbackForm, id=form_id)
+    question = get_object_or_404(FeedbackQuestion, id=question_id, form=feedback_form)
+    
+    if request.method == 'POST':
+        import json
+        try:
+            data = json.loads(request.body)
+            
+            # Validate required fields
+            question_text = data.get('question_text', '').strip()
+            if not question_text:
+                return JsonResponse({'success': False, 'error': 'Question text is required'})
+            
+            question_type = data.get('question_type', 'rating')
+            is_required = data.get('is_required', True)
+            choices_text = data.get('choices', '').strip()
+            
+            # Process choices for multiple choice questions
+            choices = []
+            if question_type == 'multiple_choice':
+                if not choices_text:
+                    return JsonResponse({'success': False, 'error': 'Choices are required for multiple choice questions'})
+                choices = [choice.strip() for choice in choices_text.split('\n') if choice.strip()]
+                if len(choices) < 2:
+                    return JsonResponse({'success': False, 'error': 'At least 2 choices are required for multiple choice questions'})
+            
+            # Update the question
+            with transaction.atomic():
+                question.question_text = question_text
+                question.question_type = question_type
+                question.is_required = is_required
+                question.choices = choices if question_type == 'multiple_choice' else []
+                question.save()
+            
+            # Return updated question data
+            return JsonResponse({
+                'success': True,
+                'question': {
+                    'id': question.id,
+                    'question_text': question.question_text,
+                    'question_type': question.question_type,
+                    'is_required': question.is_required,
+                    'choices': question.choices
+                }
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+@user_passes_test(is_admin)
+def delete_question_ajax(request, form_id, question_id):
+    """Delete a question via AJAX for inline editing"""
+    feedback_form = get_object_or_404(FeedbackForm, id=form_id)
+    question = get_object_or_404(FeedbackQuestion, id=question_id, form=feedback_form)
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                question.delete()
+                
+                # Reorder remaining questions
+                remaining_questions = FeedbackQuestion.objects.filter(form=feedback_form).order_by('order')
+                for index, q in enumerate(remaining_questions, 1):
+                    if q.order != index:
+                        q.order = index
+                        q.save()
+            
+            return JsonResponse({'success': True})
+            
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     
@@ -800,3 +957,647 @@ def test_messages_view(request):
     messages.info(request, "This is an info message!")
     
     return redirect('admin_dashboard')
+
+
+@login_required
+@user_passes_test(is_admin)
+def import_data_view(request):
+    """Main import page for professors, students, and subjects"""
+    return render(request, 'import_data.html')
+
+
+@login_required
+@user_passes_test(is_admin)
+def download_professor_template(request):
+    """Download Excel template for professors"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Professors Template"
+    
+    # Header style
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="a50c22", end_color="a50c22", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Headers
+    headers = [
+        'First Name', 'Last Name', 'Email', 'Username', 'Employee ID', 'Department'
+    ]
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = thin_border
+    
+    # Sample data
+    sample_data = [
+        ['John', 'Doe', 'john.doe@kjsit.edu', 'john.doe', 'EMP001', 'Computer Engineering'],
+        ['Jane', 'Smith', 'jane.smith@kjsit.edu', 'jane.smith', 'EMP002', 'Information Technology'],
+    ]
+    
+    for row, data in enumerate(sample_data, 2):
+        for col, value in enumerate(data, 1):
+            cell = ws.cell(row=row, column=col, value=value)
+            cell.border = thin_border
+    
+    # Adjust column widths
+    for col in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 20
+    
+    # Create response
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename=professors_template.xlsx'
+    return response
+
+
+@login_required
+@user_passes_test(is_admin)
+def download_student_template(request):
+    """Download Excel template for students"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Students Template"
+    
+    # Header style
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="a50c22", end_color="a50c22", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Headers
+    headers = [
+        'First Name', 'Last Name', 'Email', 'Username', 'Roll Number', 'Division', 'Year', 'Practical Batch'
+    ]
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = thin_border
+    
+    # Sample data
+    sample_data = [
+        ['Alice', 'Johnson', 'alice.johnson@student.kjsit.edu', 'alice.johnson', 'CS2023001', 'A', '2', 'A1'],
+        ['Bob', 'Williams', 'bob.williams@student.kjsit.edu', 'bob.williams', 'CS2023002', 'A', '2', 'A2'],
+    ]
+    
+    for row, data in enumerate(sample_data, 2):
+        for col, value in enumerate(data, 1):
+            cell = ws.cell(row=row, column=col, value=value)
+            cell.border = thin_border
+    
+    # Add instructions sheet
+    ws2 = wb.create_sheet("Instructions")
+    instructions = [
+        "Instructions for Students Import:",
+        "",
+        "1. Division: Enter division letter (A, B, C, etc.)",
+        "2. Year: Enter year number (1, 2, 3, 4)",
+        "3. Practical Batch: Enter batch name (A1, A2, B1, etc.) - Optional",
+        "4. Email: Must be unique",
+        "5. Username: Must be unique",
+        "6. Roll Number: Must be unique",
+        "",
+        "Note: Division and Practical Batch must exist in the system before importing students."
+    ]
+    
+    for row, instruction in enumerate(instructions, 1):
+        ws2.cell(row=row, column=1, value=instruction)
+    
+    # Adjust column widths
+    for col in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 20
+    
+    # Create response
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename=students_template.xlsx'
+    return response
+
+
+@login_required
+@user_passes_test(is_admin)
+def download_subject_template(request):
+    """Download Excel template for subjects"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Subjects Template"
+    
+    # Header style
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="a50c22", end_color="a50c22", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Headers
+    headers = [
+        'Subject Name', 'Subject Code', 'Subject Type', 'Year', 'Semester'
+    ]
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = thin_border
+    
+    # Sample data
+    sample_data = [
+        ['Data Structures', 'CS201', 'theory', '2', '3'],
+        ['Database Management Lab', 'CS202L', 'practical', '2', '3'],
+        ['Software Engineering', 'CS203', 'sat', '2', '4'],
+    ]
+    
+    for row, data in enumerate(sample_data, 2):
+        for col, value in enumerate(data, 1):
+            cell = ws.cell(row=row, column=col, value=value)
+            cell.border = thin_border
+    
+    # Add instructions sheet
+    ws2 = wb.create_sheet("Instructions")
+    instructions = [
+        "Instructions for Subjects Import:",
+        "",
+        "1. Subject Type: Must be one of: theory, practical, sat",
+        "2. Year: Enter year number (1, 2, 3, 4)",
+        "3. Semester: Enter semester number (1-8)",
+        "4. Subject Code: Must be unique",
+        "",
+        "Subject Type Definitions:",
+        "- theory: Regular theory subjects",
+        "- practical: Laboratory/practical subjects",
+        "- sat: Student Assessment Test subjects"
+    ]
+    
+    for row, instruction in enumerate(instructions, 1):
+        ws2.cell(row=row, column=1, value=instruction)
+    
+    # Adjust column widths
+    for col in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 20
+    
+    # Create response
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename=subjects_template.xlsx'
+    return response
+
+
+@login_required
+@user_passes_test(is_admin)
+def download_assignment_template(request):
+    """Download Excel template for professor-batch assignments"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Assignments Template"
+    
+    # Header style
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="a50c22", end_color="a50c22", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Headers
+    headers = [
+        'Professor Employee ID', 'Subject Code', 'Division Name', 'Division Year', 'Batch Name'
+    ]
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = thin_border
+    
+    # Sample data
+    sample_data = [
+        ['EMP001', 'CS202L', 'A', '2', 'A1'],
+        ['EMP002', 'CS202L', 'A', '2', 'A2'],
+        ['EMP001', 'CS205L', 'B', '2', 'B1'],
+    ]
+    
+    for row, data in enumerate(sample_data, 2):
+        for col, value in enumerate(data, 1):
+            cell = ws.cell(row=row, column=col, value=value)
+            cell.border = thin_border
+    
+    # Add instructions sheet
+    ws2 = wb.create_sheet("Instructions")
+    instructions = [
+        "Instructions for Professor-Batch Assignments Import:",
+        "",
+        "1. Professor Employee ID: Must exist in the system",
+        "2. Subject Code: Must exist and be of type 'practical'",
+        "3. Division Name: Division letter (A, B, C, etc.)",
+        "4. Division Year: Year number (1, 2, 3, 4)",
+        "5. Batch Name: Batch name within the division (A1, A2, B1, etc.)",
+        "",
+        "Note: This assigns professors to teach practical subjects for specific batches.",
+        "Both professor and practical batch must exist before importing assignments.",
+        "",
+        "Example: EMP001 teaching CS202L (Database Lab) to batch A1 of division A, year 2"
+    ]
+    
+    for row, instruction in enumerate(instructions, 1):
+        ws2.cell(row=row, column=1, value=instruction)
+    
+    # Adjust column widths
+    for col in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 20
+    
+    # Create response
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename=professor_assignments_template.xlsx'
+    return response
+
+
+@login_required
+@user_passes_test(is_admin)
+def import_professors(request):
+    """Import professors from Excel file"""
+    if request.method == 'POST':
+        if 'excel_file' not in request.FILES:
+            messages.error(request, "Please select an Excel file to upload.")
+            return redirect('import_data')
+        
+        file = request.FILES['excel_file']
+        
+        if not file.name.endswith(('.xlsx', '.xls')):
+            messages.error(request, "Please upload a valid Excel file (.xlsx or .xls).")
+            return redirect('import_data')
+        
+        try:
+            df = pd.read_excel(file)
+            required_columns = ['First Name', 'Last Name', 'Email', 'Username', 'Employee ID', 'Department']
+            
+            # Check if all required columns exist
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                messages.error(request, f"Missing required columns: {', '.join(missing_columns)}")
+                return redirect('import_data')
+            
+            imported_count = 0
+            errors = []
+            
+            with transaction.atomic():
+                for index, row in df.iterrows():
+                    try:
+                        # Check if user already exists
+                        if User.objects.filter(username=row['Username']).exists():
+                            errors.append(f"Row {index + 2}: Username '{row['Username']}' already exists")
+                            continue
+                        
+                        if User.objects.filter(email=row['Email']).exists():
+                            errors.append(f"Row {index + 2}: Email '{row['Email']}' already exists")
+                            continue
+                        
+                        if Professor.objects.filter(employee_id=row['Employee ID']).exists():
+                            errors.append(f"Row {index + 2}: Employee ID '{row['Employee ID']}' already exists")
+                            continue
+                        
+                        # Create user
+                        user = User.objects.create_user(
+                            username=row['Username'],
+                            email=row['Email'],
+                            first_name=row['First Name'],
+                            last_name=row['Last Name'],
+                            is_staff=False
+                        )
+                        
+                        # Create professor
+                        Professor.objects.create(
+                            user=user,
+                            employee_id=row['Employee ID'],
+                            department=row['Department']
+                        )
+                        
+                        imported_count += 1
+                        
+                    except Exception as e:
+                        errors.append(f"Row {index + 2}: {str(e)}")
+            
+            if imported_count > 0:
+                messages.success(request, f"Successfully imported {imported_count} professors.")
+            
+            if errors:
+                error_msg = "Errors encountered:\n" + "\n".join(errors[:10])
+                if len(errors) > 10:
+                    error_msg += f"\n... and {len(errors) - 10} more errors."
+                messages.error(request, error_msg)
+            
+        except Exception as e:
+            messages.error(request, f"Error processing file: {str(e)}")
+    
+    return redirect('import_data')
+
+
+@login_required
+@user_passes_test(is_admin)
+def import_students(request):
+    """Import students from Excel file"""
+    if request.method == 'POST':
+        if 'excel_file' not in request.FILES:
+            messages.error(request, "Please select an Excel file to upload.")
+            return redirect('import_data')
+        
+        file = request.FILES['excel_file']
+        
+        if not file.name.endswith(('.xlsx', '.xls')):
+            messages.error(request, "Please upload a valid Excel file (.xlsx or .xls).")
+            return redirect('import_data')
+        
+        try:
+            df = pd.read_excel(file)
+            required_columns = ['First Name', 'Last Name', 'Email', 'Username', 'Roll Number', 'Division', 'Year']
+            
+            # Check if all required columns exist
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                messages.error(request, f"Missing required columns: {', '.join(missing_columns)}")
+                return redirect('import_data')
+            
+            imported_count = 0
+            errors = []
+            
+            with transaction.atomic():
+                for index, row in df.iterrows():
+                    try:
+                        # Check if user already exists
+                        if User.objects.filter(username=row['Username']).exists():
+                            errors.append(f"Row {index + 2}: Username '{row['Username']}' already exists")
+                            continue
+                        
+                        if User.objects.filter(email=row['Email']).exists():
+                            errors.append(f"Row {index + 2}: Email '{row['Email']}' already exists")
+                            continue
+                        
+                        if Student.objects.filter(roll_number=row['Roll Number']).exists():
+                            errors.append(f"Row {index + 2}: Roll Number '{row['Roll Number']}' already exists")
+                            continue
+                        
+                        # Get or create division
+                        try:
+                            division = Division.objects.get(name=row['Division'], year=int(row['Year']))
+                        except Division.DoesNotExist:
+                            errors.append(f"Row {index + 2}: Division '{row['Division']}' for year {row['Year']} does not exist")
+                            continue
+                        
+                        # Get practical batch if specified
+                        practical_batch = None
+                        if 'Practical Batch' in df.columns and pd.notna(row['Practical Batch']):
+                            try:
+                                practical_batch = PracticalBatch.objects.get(name=row['Practical Batch'], division=division)
+                            except PracticalBatch.DoesNotExist:
+                                errors.append(f"Row {index + 2}: Practical Batch '{row['Practical Batch']}' does not exist for division {division}")
+                                continue
+                        
+                        # Create user
+                        user = User.objects.create_user(
+                            username=row['Username'],
+                            email=row['Email'],
+                            first_name=row['First Name'],
+                            last_name=row['Last Name'],
+                            is_staff=False
+                        )
+                        
+                        # Create student
+                        Student.objects.create(
+                            user=user,
+                            roll_number=row['Roll Number'],
+                            division=division,
+                            practical_batch=practical_batch
+                        )
+                        
+                        imported_count += 1
+                        
+                    except Exception as e:
+                        errors.append(f"Row {index + 2}: {str(e)}")
+            
+            if imported_count > 0:
+                messages.success(request, f"Successfully imported {imported_count} students.")
+            
+            if errors:
+                error_msg = "Errors encountered:\n" + "\n".join(errors[:10])
+                if len(errors) > 10:
+                    error_msg += f"\n... and {len(errors) - 10} more errors."
+                messages.error(request, error_msg)
+            
+        except Exception as e:
+            messages.error(request, f"Error processing file: {str(e)}")
+    
+    return redirect('import_data')
+
+
+@login_required
+@user_passes_test(is_admin)
+def import_subjects(request):
+    """Import subjects from Excel file"""
+    if request.method == 'POST':
+        if 'excel_file' not in request.FILES:
+            messages.error(request, "Please select an Excel file to upload.")
+            return redirect('import_data')
+        
+        file = request.FILES['excel_file']
+        
+        if not file.name.endswith(('.xlsx', '.xls')):
+            messages.error(request, "Please upload a valid Excel file (.xlsx or .xls).")
+            return redirect('import_data')
+        
+        try:
+            df = pd.read_excel(file)
+            required_columns = ['Subject Name', 'Subject Code', 'Subject Type', 'Year', 'Semester']
+            
+            # Check if all required columns exist
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                messages.error(request, f"Missing required columns: {', '.join(missing_columns)}")
+                return redirect('import_data')
+            
+            imported_count = 0
+            errors = []
+            valid_types = ['theory', 'practical', 'sat']
+            
+            with transaction.atomic():
+                for index, row in df.iterrows():
+                    try:
+                        # Validate subject type
+                        if row['Subject Type'].lower() not in valid_types:
+                            errors.append(f"Row {index + 2}: Invalid subject type '{row['Subject Type']}'. Must be one of: {', '.join(valid_types)}")
+                            continue
+                        
+                        # Check if subject code already exists
+                        if Subject.objects.filter(code=row['Subject Code']).exists():
+                            errors.append(f"Row {index + 2}: Subject Code '{row['Subject Code']}' already exists")
+                            continue
+                        
+                        # Create subject
+                        Subject.objects.create(
+                            name=row['Subject Name'],
+                            code=row['Subject Code'],
+                            subject_type=row['Subject Type'].lower(),
+                            year=int(row['Year']),
+                            semester=int(row['Semester'])
+                        )
+                        
+                        imported_count += 1
+                        
+                    except Exception as e:
+                        errors.append(f"Row {index + 2}: {str(e)}")
+            
+            if imported_count > 0:
+                messages.success(request, f"Successfully imported {imported_count} subjects.")
+            
+            if errors:
+                error_msg = "Errors encountered:\n" + "\n".join(errors[:10])
+                if len(errors) > 10:
+                    error_msg += f"\n... and {len(errors) - 10} more errors."
+                messages.error(request, error_msg)
+            
+        except Exception as e:
+            messages.error(request, f"Error processing file: {str(e)}")
+    
+    return redirect('import_data')
+
+
+@login_required
+@user_passes_test(is_admin)
+def import_assignments(request):
+    """Import professor-batch assignments from Excel file"""
+    if request.method == 'POST':
+        if 'excel_file' not in request.FILES:
+            messages.error(request, "Please select an Excel file to upload.")
+            return redirect('import_data')
+        
+        file = request.FILES['excel_file']
+        
+        if not file.name.endswith(('.xlsx', '.xls')):
+            messages.error(request, "Please upload a valid Excel file (.xlsx or .xls).")
+            return redirect('import_data')
+        
+        try:
+            df = pd.read_excel(file)
+            required_columns = ['Professor Employee ID', 'Subject Code', 'Division Name', 'Division Year', 'Batch Name']
+            
+            # Check if all required columns exist
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                messages.error(request, f"Missing required columns: {', '.join(missing_columns)}")
+                return redirect('import_data')
+            
+            imported_count = 0
+            errors = []
+            
+            with transaction.atomic():
+                for index, row in df.iterrows():
+                    try:
+                        # Get professor
+                        try:
+                            professor = Professor.objects.get(employee_id=row['Professor Employee ID'])
+                        except Professor.DoesNotExist:
+                            errors.append(f"Row {index + 2}: Professor with Employee ID '{row['Professor Employee ID']}' does not exist")
+                            continue
+                        
+                        # Get subject
+                        try:
+                            subject = Subject.objects.get(code=row['Subject Code'])
+                            if subject.subject_type != 'practical':
+                                errors.append(f"Row {index + 2}: Subject '{row['Subject Code']}' is not a practical subject")
+                                continue
+                        except Subject.DoesNotExist:
+                            errors.append(f"Row {index + 2}: Subject with code '{row['Subject Code']}' does not exist")
+                            continue
+                        
+                        # Get division
+                        try:
+                            division = Division.objects.get(name=row['Division Name'], year=int(row['Division Year']))
+                        except Division.DoesNotExist:
+                            errors.append(f"Row {index + 2}: Division '{row['Division Name']}' for year {row['Division Year']} does not exist")
+                            continue
+                        
+                        # Get batch
+                        try:
+                            batch = PracticalBatch.objects.get(name=row['Batch Name'], division=division)
+                        except PracticalBatch.DoesNotExist:
+                            errors.append(f"Row {index + 2}: Batch '{row['Batch Name']}' does not exist for division {division}")
+                            continue
+                        
+                        # Check if assignment already exists
+                        if PracticalAssignment.objects.filter(professor=professor, subject=subject, batch=batch).exists():
+                            errors.append(f"Row {index + 2}: Assignment already exists for {professor.employee_id} - {subject.code} - {batch.name}")
+                            continue
+                        
+                        # Create assignment
+                        PracticalAssignment.objects.create(
+                            professor=professor,
+                            subject=subject,
+                            batch=batch
+                        )
+                        
+                        imported_count += 1
+                        
+                    except Exception as e:
+                        errors.append(f"Row {index + 2}: {str(e)}")
+            
+            if imported_count > 0:
+                messages.success(request, f"Successfully imported {imported_count} professor-batch assignments.")
+            
+            if errors:
+                error_msg = "Errors encountered:\n" + "\n".join(errors[:10])
+                if len(errors) > 10:
+                    error_msg += f"\n... and {len(errors) - 10} more errors."
+                messages.error(request, error_msg)
+            
+        except Exception as e:
+            messages.error(request, f"Error processing file: {str(e)}")
+    
+    return redirect('import_data')

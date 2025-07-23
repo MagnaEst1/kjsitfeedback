@@ -35,10 +35,6 @@ This project uses **Django** for the backend and **React + Vite + TSX** for the 
 
     uv install
 
-### Frontend dependencies
-
-    cd kjsitfeedbackvite
-    npm install
 
 ---
 
@@ -46,16 +42,7 @@ This project uses **Django** for the backend and **React + Vite + TSX** for the 
 
 ### Run Both Frontend and Backend
 
-    uv run.py
-
-### Run Only Backend (Django)
-
-    uv run.py --backend
-
-### Run Only Frontend (React + Vite)
-
-    uv run.py --frontend
-
+    uv run main.py
 ---
 
 ## 🛠 What the Script Does

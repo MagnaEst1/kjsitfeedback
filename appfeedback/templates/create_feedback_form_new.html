@@ -1,0 +1,905 @@
+{% extends "base.html" %}
+
+{% block title %}Create Feedback Form - KJSIT Feedback{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-4">
+    <!-- Enhanced Header -->
+    <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 mb-8 relative overflow-hidden">
+        <!-- Background decorative elements -->
+        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-kjsit-red/10 to-kjsit-red-light/10 rounded-full -translate-y-16 translate-x-16"></div>
+        <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-kjsit-red-light/10 to-kjsit-red/10 rounded-full translate-y-12 -translate-x-12"></div>
+        
+        <div class="relative z-10">
+            <div class="flex items-center space-x-4 mb-4">
+                <div class="w-16 h-16 bg-gradient-to-br from-kjsit-red via-kjsit-red-light to-kjsit-red/80 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-4xl font-extrabold bg-gradient-to-r from-kjsit-red to-kjsit-red-light bg-clip-text text-transparent mb-2">Create Feedback Form</h1>
+                    <p class="text-xl font-semibold text-gray-700">Create a new feedback form for students to evaluate professors</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Form Container -->
+    <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 mb-8 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-kjsit-red/5 to-kjsit-red-light/5 rounded-full -translate-y-16 translate-x-16"></div>
+        
+        <div class="relative z-10">
+            <form method="post" id="feedback-form" class="space-y-8">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Form Title -->
+                    <div class="md:col-span-2">
+                        <label for="{{ form.title.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                                <span>Form Title *</span>
+                            </div>
+                        </label>
+                        <div class="relative">
+                            {{ form.title }}
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        {% if form.title.errors %}
+                            <div class="mt-2 flex items-center space-x-2 text-red-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                </svg>
+                                <p class="text-sm">{{ form.title.errors.0 }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Description -->
+                    <div class="md:col-span-2">
+                        <label for="{{ form.description.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
+                                </svg>
+                                <span>Description</span>
+                            </div>
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="mt-2 flex items-center space-x-2 text-red-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                </svg>
+                                <p class="text-sm">{{ form.description.errors.0 }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Continue with original form fields but simplified for this demonstration -->
+                    <!-- Division -->
+                    <div class="group">
+                        <label for="{{ form.division.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                                </svg>
+                                <span>Division *</span>
+                            </div>
+                        </label>
+                        <div class="relative">
+                            {{ form.division }}
+                            <div class="absolute inset-y-0 right-0 pr-8 flex items-center pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400 group-hover:text-kjsit-red transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </div>
+                        </div>
+                        {% if form.division.errors %}
+                            <div class="mt-2 flex items-center space-x-2 text-red-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                </svg>
+                                <p class="text-sm">{{ form.division.errors.0 }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Subject Type -->
+                    <div class="group">
+                        <label for="{{ form.subject_type.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                                </svg>
+                                <span>Subject Type *</span>
+                            </div>
+                        </label>
+                        <div class="relative">
+                            {{ form.subject_type }}
+                            <div class="absolute inset-y-0 right-0 pr-8 flex items-center pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400 group-hover:text-kjsit-red transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </div>
+                        </div>
+                        {% if form.subject_type.errors %}
+                            <div class="mt-2 flex items-center space-x-2 text-red-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                </svg>
+                                <p class="text-sm">{{ form.subject_type.errors.0 }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Practical Batch (conditional) -->
+                    <div id="practical-batch-field" class="md:col-span-2 group" style="display: none;">
+                        <label for="{{ form.practical_batch.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                </svg>
+                                <span>Practical Batch * (Required for Practical subjects)</span>
+                            </div>
+                        </label>
+                        <div class="relative">
+                            {{ form.practical_batch }}
+                            <div class="absolute inset-y-0 right-0 pr-8 flex items-center pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400 group-hover:text-kjsit-red transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </div>
+                        </div>
+                        {% if form.practical_batch.errors %}
+                            <div class="mt-2 flex items-center space-x-2 text-red-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                </svg>
+                                <p class="text-sm">{{ form.practical_batch.errors.0 }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Subject -->
+                    <div class="group">
+                        <label for="{{ form.subject.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                </svg>
+                                <span>Subject *</span>
+                            </div>
+                        </label>
+                        <div class="relative">
+                            {{ form.subject }}
+                            <div class="absolute inset-y-0 right-0 pr-8 flex items-center pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400 group-hover:text-kjsit-red transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </div>
+                        </div>
+                        {% if form.subject.errors %}
+                            <div class="mt-2 flex items-center space-x-2 text-red-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                </svg>
+                                <p class="text-sm">{{ form.subject.errors.0 }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Professor -->
+                    <div class="group">
+                        <label for="{{ form.professor.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                                <span>Professor *</span>
+                            </div>
+                        </label>
+                        <div class="relative">
+                            {{ form.professor }}
+                            <div class="absolute inset-y-0 right-0 pr-8 flex items-center pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400 group-hover:text-kjsit-red transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </div>
+                        </div>
+                        {% if form.professor.errors %}
+                            <div class="mt-2 flex items-center space-x-2 text-red-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                </svg>
+                                <p class="text-sm">{{ form.professor.errors.0 }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Start Date -->
+                    <div class="group">
+                        <label for="{{ form.start_date.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4M8 7H4a1 1 0 00-1 1v4a1 1 0 001 1h1m0 0v7a1 1 0 001 1h8a1 1 0 001-1v-7m0 0h1a1 1 0 001-1V8a1 1 0 00-1-1h-4"/>
+                                </svg>
+                                <span>Start Date *</span>
+                            </div>
+                        </label>
+                        <div class="relative">
+                            {{ form.start_date }}
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4M8 7H4a1 1 0 00-1 1v4a1 1 0 001 1h1m0 0v7a1 1 0 001 1h8a1 1 0 001-1v-7m0 0h1a1 1 0 001-1V8a1 1 0 00-1-1h-4"/>
+                                </svg>
+                            </div>
+                        </div>
+                        {% if form.start_date.errors %}
+                            <div class="mt-2 flex items-center space-x-2 text-red-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                </svg>
+                                <p class="text-sm">{{ form.start_date.errors.0 }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- End Date -->
+                    <div class="group">
+                        <label for="{{ form.end_date.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-3">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4M8 7H4a1 1 0 00-1 1v4a1 1 0 001 1h1m0 0v7a1 1 0 001 1h8a1 1 0 001-1v-7m0 0h1a1 1 0 001-1V8a1 1 0 00-1-1h-4"/>
+                                </svg>
+                                <span>End Date *</span>
+                            </div>
+                        </label>
+                        <div class="relative">
+                            {{ form.end_date }}
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4M8 7H4a1 1 0 00-1 1v4a1 1 0 001 1h1m0 0v7a1 1 0 001 1h8a1 1 0 001-1v-7m0 0h1a1 1 0 001-1V8a1 1 0 00-1-1h-4"/>
+                                </svg>
+                            </div>
+                        </div>
+                        {% if form.end_date.errors %}
+                            <div class="mt-2 flex items-center space-x-2 text-red-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                </svg>
+                                <p class="text-sm">{{ form.end_date.errors.0 }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Is Active -->
+                    <div class="md:col-span-2">
+                        <div class="bg-gradient-to-r from-kjsit-red/10 to-kjsit-red/5 rounded-xl p-4 border border-kjsit-red/20">
+                            <div class="flex items-start space-x-3">
+                                <div class="flex-shrink-0 pt-0.5">
+                                    {{ form.is_active }}
+                                </div>
+                                <div class="flex-1">
+                                    <label for="{{ form.is_active.id_for_label }}" class="flex items-center space-x-2 text-sm font-bold text-gray-700 cursor-pointer hover:text-kjsit-red transition-colors">
+                                        <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <span>Make this form active immediately</span>
+                                    </label>
+                                    <p class="text-sm text-gray-600 mt-1 ml-7">If checked, students will be able to submit feedback through this form right away.</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% if form.is_active.errors %}
+                            <div class="mt-2 flex items-center space-x-2 text-red-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                </svg>
+                                <p class="text-sm">{{ form.is_active.errors.0 }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-center pt-8">
+                    <button type="submit" 
+                            class="group relative overflow-hidden bg-gradient-to-r from-kjsit-red to-kjsit-red-light hover:from-kjsit-red-light hover:to-kjsit-red text-white px-8 py-4 rounded-2xl transition-all duration-300 shadow-2xl hover:shadow-3xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 text-lg font-bold">
+                        <div class="flex items-center space-x-3 relative z-10">
+                            <svg class="w-6 h-6 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            </svg>
+                            <span class="font-bold">Create Form</span>
+                        </div>
+                        <!-- Shine effect -->
+                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dynamic Question Builder Section -->
+    <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 mb-8 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-kjsit-red/5 to-kjsit-red-light/5 rounded-full -translate-y-16 translate-x-16"></div>
+        
+        <div class="relative z-10">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-kjsit-red via-kjsit-red-light to-kjsit-red/80 rounded-xl flex items-center justify-center shadow-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold bg-gradient-to-r from-kjsit-red to-kjsit-red-light bg-clip-text text-transparent">Form Questions</h2>
+                        <p class="text-gray-600">Build your feedback form by adding and customizing questions</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                    <div class="bg-kjsit-red/10 px-4 py-2 rounded-full border border-kjsit-red/20">
+                        <span class="text-kjsit-red font-semibold text-sm" id="question-counter">5 Questions</span>
+                    </div>
+                    <button type="button" onclick="addQuestion()" 
+                            class="group relative overflow-hidden bg-gradient-to-r from-kjsit-red to-kjsit-red-light hover:from-kjsit-red-light hover:to-kjsit-red text-white px-6 py-2 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 font-bold">
+                        <div class="flex items-center space-x-2 relative z-10">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            </svg>
+                            <span>Add Question</span>
+                        </div>
+                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Questions Container -->
+            <div id="questions-container" class="space-y-4">
+                <!-- Questions will be dynamically loaded here -->
+            </div>
+
+            <!-- Add Question Form (Initially Hidden) -->
+            <div id="add-question-form" class="hidden mt-6 bg-white rounded-xl border-2 border-kjsit-red/20 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">Add New Question</h3>
+                    <button type="button" onclick="cancelAddQuestion()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Question Text *</label>
+                        <textarea id="new-question-text" class="w-full p-3 border-2 border-kjsit-red/20 rounded-lg focus:border-kjsit-red focus:ring-2 focus:ring-kjsit-red/20 transition-all duration-300 resize-none" 
+                                  rows="2" placeholder="Enter your question here..."></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Question Type</label>
+                            <select id="new-question-type" class="w-full p-3 border-2 border-kjsit-red/20 rounded-lg focus:border-kjsit-red focus:ring-2 focus:ring-kjsit-red/20 transition-all duration-300" 
+                                    onchange="toggleNewQuestionChoices()">
+                                <option value="rating">Rating (1-5)</option>
+                                <option value="text">Text Response</option>
+                                <option value="multiple_choice">Multiple Choice</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Required</label>
+                            <select id="new-question-required" class="w-full p-3 border-2 border-kjsit-red/20 rounded-lg focus:border-kjsit-red focus:ring-2 focus:ring-kjsit-red/20 transition-all duration-300">
+                                <option value="true">Required</option>
+                                <option value="false">Optional</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Multiple Choice Options -->
+                    <div id="new-question-choices-container" class="hidden">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Answer Choices (one per line) *</label>
+                        <textarea id="new-question-choices" class="w-full p-3 border-2 border-kjsit-red/20 rounded-lg focus:border-kjsit-red focus:ring-2 focus:ring-kjsit-red/20 transition-all duration-300" 
+                                  rows="4" placeholder="Option 1&#10;Option 2&#10;Option 3&#10;Option 4"></textarea>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex items-center space-x-3 pt-2">
+                        <button type="button" onclick="saveNewQuestion()" 
+                                class="group relative overflow-hidden bg-gradient-to-r from-kjsit-red to-kjsit-red-light hover:from-kjsit-red-light hover:to-kjsit-red text-white px-6 py-2 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 font-bold">
+                            <div class="flex items-center space-x-2 relative z-10">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>Add Question</span>
+                            </div>
+                            <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
+                        </button>
+                        
+                        <button type="button" onclick="cancelAddQuestion()" 
+                                class="group relative overflow-hidden bg-gradient-to-r from-kjsit-red/20 to-kjsit-red-light/20 hover:from-kjsit-red/30 hover:to-kjsit-red-light/30 text-kjsit-red px-6 py-2 rounded-lg transition-all duration-300 shadow hover:shadow-md hover:scale-110 transform border-2 border-kjsit-red/30 hover:border-kjsit-red/50 font-bold">
+                            <div class="flex items-center space-x-2 relative z-10">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                                <span>Cancel</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Question Management and AJAX -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+// Global variables
+let questions = [];
+let questionIdCounter = 1;
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize question management
+    initializeQuestionManagement();
+    
+    // Initialize AJAX form dependencies
+    initializeFormDependencies();
+});
+
+function initializeQuestionManagement() {
+    // Load default questions
+    const defaultQuestions = [
+        { id: questionIdCounter++, text: "Rate the overall teaching quality", type: "rating", required: true },
+        { id: questionIdCounter++, text: "How would you rate the clarity of explanations?", type: "rating", required: true },
+        { id: questionIdCounter++, text: "Rate the professor's punctuality", type: "rating", required: true },
+        { id: questionIdCounter++, text: "How helpful was the professor in addressing doubts?", type: "rating", required: true },
+        { id: questionIdCounter++, text: "Any additional comments or suggestions", type: "text", required: false }
+    ];
+    
+    questions = defaultQuestions;
+    renderQuestions();
+    updateQuestionCounter();
+    
+    // Initialize sortable
+    initializeSortable();
+}
+
+function initializeFormDependencies() {
+    // Get form elements
+    const divisionField = document.getElementById('{{ form.division.id_for_label }}');
+    const subjectTypeField = document.getElementById('{{ form.subject_type.id_for_label }}');
+    const practicalBatchField = document.getElementById('practical-batch-field');
+    const practicalBatchSelect = document.getElementById('{{ form.practical_batch.id_for_label }}');
+    const subjectField = document.getElementById('{{ form.subject.id_for_label }}');
+    const professorField = document.getElementById('{{ form.professor.id_for_label }}');
+    const titleField = document.getElementById('{{ form.title.id_for_label }}');
+    
+    // Step 1: Handle division change
+    divisionField.addEventListener('change', function() {
+        resetDependentFields(['subject_type']);
+        updateBatches();
+    });
+    
+    // Step 2: Handle subject type change
+    subjectTypeField.addEventListener('change', function() {
+        const subjectType = this.value;
+        resetDependentFields(['practical_batch', 'subject', 'professor']);
+        
+        // Show/hide practical batch field based on subject type
+        if (subjectType === 'practical') {
+            practicalBatchField.style.display = 'block';
+            updateBatches();
+        } else {
+            practicalBatchField.style.display = 'none';
+            updateSubjects(); // For theory/SAT subjects, directly update subjects
+        }
+    });
+    
+    // Step 3: Handle practical batch change (for practical/SAT subjects)
+    practicalBatchSelect.addEventListener('change', function() {
+        resetDependentFields(['subject', 'professor']);
+        updateSubjects();
+    });
+    
+    // Step 4: Handle subject change
+    subjectField.addEventListener('change', function() {
+        resetDependentFields(['professor']);
+        updateProfessors();
+        generateTitle();
+    });
+    
+    // Also update title when division changes
+    divisionField.addEventListener('change', generateTitle);
+    
+    function resetDependentFields(fields) {
+        if (fields.includes('subject_type')) {
+            subjectTypeField.value = '';
+            practicalBatchField.style.display = 'none';
+        }
+        if (fields.includes('practical_batch')) {
+            practicalBatchSelect.innerHTML = '<option value="">--- Select Batch ---</option>';
+        }
+        if (fields.includes('subject')) {
+            subjectField.innerHTML = '<option value="">--- Select Subject ---</option>';
+        }
+        if (fields.includes('professor')) {
+            professorField.innerHTML = '<option value="">--- Select Professor ---</option>';
+        }
+    }
+    
+    function updateBatches() {
+        const divisionId = divisionField.value;
+        
+        practicalBatchSelect.innerHTML = '<option value="">--- Select Batch ---</option>';
+        
+        if (divisionId) {
+            fetch(`/ajax/get-batches/?division_id=${divisionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.batches.forEach(batch => {
+                        const option = new Option(batch.name, batch.id);
+                        practicalBatchSelect.add(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching batches:', error));
+        }
+    }
+    
+    function updateSubjects() {
+        const subjectType = subjectTypeField.value;
+        const divisionId = divisionField.value;
+        const practicalBatchId = practicalBatchSelect.value;
+        
+        subjectField.innerHTML = '<option value="">--- Select Subject ---</option>';
+        
+        if (subjectType && divisionId) {
+            let url = `/ajax/get-subjects/?subject_type=${subjectType}&division_id=${divisionId}`;
+            
+            // For practical subjects, also include batch
+            if (subjectType === 'practical' && practicalBatchId) {
+                url += `&practical_batch_id=${practicalBatchId}`;
+            }
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    data.subjects.forEach(subject => {
+                        const option = new Option(
+                            `${subject.code} - ${subject.name} (Year ${subject.year})`,
+                            subject.id
+                        );
+                        subjectField.add(option);
+                    });
+                    
+                    // Auto-select if only one subject
+                    if (data.subjects.length === 1) {
+                        subjectField.value = data.subjects[0].id;
+                        updateProfessors();
+                        generateTitle();
+                    }
+                })
+                .catch(error => console.error('Error fetching subjects:', error));
+        }
+    }
+    
+    function updateProfessors() {
+        const subjectId = subjectField.value;
+        const divisionId = divisionField.value;
+        const practicalBatchId = practicalBatchSelect.value;
+        
+        professorField.innerHTML = '<option value="">--- Select Professor ---</option>';
+        
+        if (subjectId && divisionId) {
+            let url = `/ajax/get-professors/?subject_id=${subjectId}&division_id=${divisionId}`;
+            
+            // For practical subjects, also include batch
+            if (practicalBatchId) {
+                url += `&practical_batch_id=${practicalBatchId}`;
+            }
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    data.professors.forEach(professor => {
+                        const option = new Option(professor.name, professor.id);
+                        professorField.add(option);
+                    });
+                    
+                    // Auto-select if only one professor
+                    if (data.professors.length === 1) {
+                        professorField.value = data.professors[0].id;
+                    }
+                })
+                .catch(error => console.error('Error fetching professors:', error));
+        }
+    }
+    
+    function generateTitle() {
+        const subjectId = subjectField.value;
+        const divisionId = divisionField.value;
+        
+        if (subjectId && divisionId) {
+            const subjectText = subjectField.options[subjectField.selectedIndex].text;
+            const divisionText = divisionField.options[divisionField.selectedIndex].text;
+            const subjectName = subjectText.split(' - ')[1].split(' (')[0];
+            titleField.value = `Feedback for ${subjectName} - ${divisionText}`;
+        }
+    }
+}
+
+function renderQuestions() {
+    const container = document.getElementById('questions-container');
+    container.innerHTML = '';
+    
+    questions.forEach((question, index) => {
+        const questionElement = createQuestionElement(question, index + 1);
+        container.appendChild(questionElement);
+    });
+}
+
+function createQuestionElement(question, order) {
+    const div = document.createElement('div');
+    div.className = 'question-item bg-white rounded-xl border border-kjsit-red/10 p-5 hover:shadow-md transition-all duration-300 hover:border-kjsit-red/20';
+    div.dataset.questionId = question.id;
+    
+    let typeColor = 'bg-kjsit-red/10 text-kjsit-red border-kjsit-red/20';
+    let typeText = 'Rating (1-5)';
+    
+    if (question.type === 'text') {
+        typeColor = 'bg-kjsit-red/15 text-kjsit-red border-kjsit-red/30';
+        typeText = 'Text Response';
+    } else if (question.type === 'multiple_choice') {
+        typeColor = 'bg-kjsit-red-light/10 text-kjsit-red-light border-kjsit-red-light/20';
+        typeText = 'Multiple Choice';
+    }
+    
+    const requiredColor = question.required ? 
+        'bg-kjsit-red/20 text-kjsit-red' : 'bg-kjsit-red/5 text-kjsit-red/70 border-kjsit-red/10';
+    const requiredText = question.required ? 'Required' : 'Optional';
+    
+    let previewElement = '';
+    if (question.type === 'rating') {
+        previewElement = `
+            <div class="flex items-center space-x-2 mt-2">
+                <span class="text-sm text-gray-500">1</span>
+                <div class="flex space-x-1">
+                    ${Array(5).fill().map(() => 
+                        '<div class="w-6 h-6 bg-kjsit-red/20 rounded-full border-2 border-kjsit-red/30"></div>'
+                    ).join('')}
+                </div>
+                <span class="text-sm text-gray-500">5</span>
+            </div>
+        `;
+    } else if (question.type === 'text') {
+        previewElement = `
+            <div class="mt-3 p-3 bg-gray-50 border-2 border-gray-200 rounded-lg">
+                <div class="text-sm text-gray-500 italic">Students can provide text responses here...</div>
+            </div>
+        `;
+    } else if (question.type === 'multiple_choice' && question.choices) {
+        const choicesHtml = question.choices.map(choice => 
+            `<span class="inline-block bg-kjsit-red/10 text-kjsit-red border border-kjsit-red/20 rounded-lg px-3 py-1 text-xs font-medium mr-2 mb-2">${choice}</span>`
+        ).join('');
+        previewElement = `
+            <div class="mt-3">
+                <span class="text-sm font-semibold text-kjsit-red">Choices:</span>
+                <div class="mt-2">${choicesHtml}</div>
+            </div>
+        `;
+    }
+    
+    div.innerHTML = `
+        <div class="flex items-start justify-between">
+            <div class="flex items-start space-x-4 flex-1">
+                <div class="drag-handle cursor-move text-gray-400 hover:text-gray-600 mt-1">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"></path>
+                    </svg>
+                </div>
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-kjsit-red/10 rounded-full flex items-center justify-center">
+                        <span class="text-kjsit-red font-bold text-sm">${order}</span>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <span class="text-lg font-semibold text-gray-800">${question.text}</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeColor}">
+                            ${typeText}
+                        </span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${requiredColor}">
+                            ${requiredText}
+                        </span>
+                    </div>
+                    ${previewElement}
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 ml-4">
+                <button onclick="editQuestion(${question.id})" 
+                        class="group relative overflow-hidden bg-kjsit-red/10 hover:bg-kjsit-red/20 text-kjsit-red px-3 py-1 rounded-lg transition-all duration-300 shadow hover:shadow-md hover:scale-110 transform border border-kjsit-red/20 hover:border-kjsit-red/40 font-bold text-sm">
+                    <div class="flex items-center space-x-1 relative z-10">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        <span>Edit</span>
+                    </div>
+                </button>
+                
+                <button onclick="deleteQuestion(${question.id})" 
+                        class="group relative overflow-hidden bg-kjsit-red/30 hover:bg-kjsit-red/50 text-white px-3 py-1 rounded-lg transition-all duration-300 shadow hover:shadow-md hover:scale-110 transform border border-kjsit-red/40 hover:border-kjsit-red/60 font-bold text-sm">
+                    <div class="flex items-center space-x-1 relative z-10">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        <span>Delete</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    return div;
+}
+
+function initializeSortable() {
+    const container = document.getElementById('questions-container');
+    Sortable.create(container, {
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'bg-kjsit-red/10',
+        onEnd: function(evt) {
+            // Update questions array order
+            const newQuestions = [];
+            const questionElements = container.querySelectorAll('.question-item');
+            questionElements.forEach(element => {
+                const questionId = parseInt(element.dataset.questionId);
+                const question = questions.find(q => q.id === questionId);
+                if (question) {
+                    newQuestions.push(question);
+                }
+            });
+            questions = newQuestions;
+            renderQuestions(); // Re-render to update order numbers
+            updateQuestionCounter();
+        }
+    });
+}
+
+function addQuestion() {
+    document.getElementById('add-question-form').classList.remove('hidden');
+    document.getElementById('new-question-text').focus();
+}
+
+function cancelAddQuestion() {
+    document.getElementById('add-question-form').classList.add('hidden');
+    // Clear form
+    document.getElementById('new-question-text').value = '';
+    document.getElementById('new-question-type').value = 'rating';
+    document.getElementById('new-question-required').value = 'true';
+    document.getElementById('new-question-choices').value = '';
+    document.getElementById('new-question-choices-container').classList.add('hidden');
+}
+
+function toggleNewQuestionChoices() {
+    const type = document.getElementById('new-question-type').value;
+    const choicesContainer = document.getElementById('new-question-choices-container');
+    
+    if (type === 'multiple_choice') {
+        choicesContainer.classList.remove('hidden');
+    } else {
+        choicesContainer.classList.add('hidden');
+    }
+}
+
+function saveNewQuestion() {
+    const text = document.getElementById('new-question-text').value.trim();
+    const type = document.getElementById('new-question-type').value;
+    const required = document.getElementById('new-question-required').value === 'true';
+    const choicesText = document.getElementById('new-question-choices').value.trim();
+    
+    if (!text) {
+        alert('Please enter a question text.');
+        return;
+    }
+    
+    if (type === 'multiple_choice' && !choicesText) {
+        alert('Please enter at least one choice for multiple choice questions.');
+        return;
+    }
+    
+    const newQuestion = {
+        id: questionIdCounter++,
+        text: text,
+        type: type,
+        required: required
+    };
+    
+    if (type === 'multiple_choice') {
+        const choices = choicesText.split('\n').map(choice => choice.trim()).filter(choice => choice);
+        if (choices.length < 2) {
+            alert('Please enter at least 2 choices for multiple choice questions.');
+            return;
+        }
+        newQuestion.choices = choices;
+    }
+    
+    questions.push(newQuestion);
+    renderQuestions();
+    updateQuestionCounter();
+    cancelAddQuestion();
+    
+    showNotification('Question added successfully!', 'success');
+}
+
+function editQuestion(questionId) {
+    const question = questions.find(q => q.id === questionId);
+    if (!question) return;
+    
+    // For now, show a simple prompt. In a full implementation, you'd show an inline edit form
+    const newText = prompt('Edit question text:', question.text);
+    if (newText && newText.trim() !== question.text) {
+        question.text = newText.trim();
+        renderQuestions();
+        showNotification('Question updated successfully!', 'success');
+    }
+}
+
+function deleteQuestion(questionId) {
+    if (!confirm('Are you sure you want to delete this question?')) {
+        return;
+    }
+    
+    questions = questions.filter(q => q.id !== questionId);
+    renderQuestions();
+    updateQuestionCounter();
+    
+    showNotification('Question deleted successfully!', 'success');
+}
+
+function updateQuestionCounter() {
+    document.getElementById('question-counter').textContent = `${questions.length} Questions`;
+}
+
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
+        type === 'success' ? 'bg-kjsit-red text-white' : 'bg-red-500 text-white'
+    }`;
+    notification.innerHTML = `
+        <div class="flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Add questions data to form submission
+document.getElementById('feedback-form').addEventListener('submit', function(e) {
+    // Add hidden input with questions data
+    const questionsInput = document.createElement('input');
+    questionsInput.type = 'hidden';
+    questionsInput.name = 'questions_data';
+    questionsInput.value = JSON.stringify(questions);
+    this.appendChild(questionsInput);
+});
+</script>
+{% endblock %}

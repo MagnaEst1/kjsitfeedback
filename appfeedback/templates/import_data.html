@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}Import Data - KJSIT Feedback{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto p-4">
+    <!-- Enhanced Page Header -->
+    <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 mb-8 relative overflow-hidden">
+        <!-- Background decorative elements -->
+        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-kjsit-red/10 to-kjsit-red-light/10 rounded-full -translate-y-16 translate-x-16"></div>
+        <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-kjsit-red-light/10 to-kjsit-red/10 rounded-full translate-y-12 -translate-x-12"></div>
+        
+        <div class="relative z-10">
+            <div class="flex items-center space-x-4 mb-4">
+                <div class="w-16 h-16 bg-gradient-to-br from-kjsit-red via-kjsit-red-light to-kjsit-red/80 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-4xl font-extrabold bg-gradient-to-r from-kjsit-red to-kjsit-red-light bg-clip-text text-transparent mb-2">Import Data</h1>
+                    <p class="text-xl font-semibold text-gray-700">Upload Excel files to import professors, students, subjects, and assignments</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Sections Grid -->
+    <div class="grid gap-8 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-4">
+        
+        <!-- Professors Import -->
+        <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-kjsit-red/10 to-kjsit-red-light/10 rounded-full -translate-y-10 translate-x-10"></div>
+            
+            <div class="relative z-10">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-kjsit-red to-kjsit-red-light rounded-xl flex items-center justify-center shadow-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Professors</h2>
+                        <p class="text-sm text-gray-600">Import faculty members</p>
+                    </div>
+                </div>
+                
+                <!-- Download Template Button -->
+                <div class="mb-4">
+                    <a href="{% url 'download_professor_template' %}" 
+                       class="group relative overflow-hidden w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105 transform border-2 border-transparent hover:border-white/20">
+                        <div class="flex items-center space-x-2 relative z-10">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <span class="font-semibold">Download Template</span>
+                        </div>
+                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
+                    </a>
+                </div>
+                
+                <!-- Upload Form -->
+                <form method="post" action="{% url 'import_professors' %}" enctype="multipart/form-data" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label for="professor_file" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <span>Excel File</span>
+                            </div>
+                        </label>
+                        <input type="file" 
+                               id="professor_file" 
+                               name="excel_file" 
+                               accept=".xlsx,.xls"
+                               required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-kjsit-red focus:border-kjsit-red transition-all duration-300 bg-white/70 backdrop-blur-sm hover:bg-white">
+                    </div>
+                    
+                    <button type="submit" 
+                            class="group relative w-full overflow-hidden bg-gradient-to-r from-kjsit-red to-kjsit-red-light hover:from-kjsit-red-light hover:to-kjsit-red text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105 transform border-2 border-transparent hover:border-white/20">
+                        <div class="flex items-center justify-center space-x-2 relative z-10">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                            </svg>
+                            <span>Import Professors</span>
+                        </div>
+                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Students Import -->
+        <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full -translate-y-10 translate-x-10"></div>
+            
+            <div class="relative z-10">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Students</h2>
+                        <p class="text-sm text-gray-600">Import student records</p>
+                    </div>
+                </div>
+                
+                <!-- Download Template Button -->
+                <div class="mb-4">
+                    <a href="{% url 'download_student_template' %}" 
+                       class="group relative overflow-hidden w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105 transform border-2 border-transparent hover:border-white/20">
+                        <div class="flex items-center space-x-2 relative z-10">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <span class="font-semibold">Download Template</span>
+                        </div>
+                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
+                    </a>
+                </div>
+                
+                <!-- Upload Form -->
+                <form method="post" action="{% url 'import_students' %}" enctype="multipart/form-data" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label for="student_file" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <span>Excel File</span>
+                            </div>
+                        </label>
+                        <input type="file" 
+                               id="student_file" 
+                               name="excel_file" 
+                               accept=".xlsx,.xls"
+                               required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 bg-white/70 backdrop-blur-sm hover:bg-white">
+                    </div>
+                    
+                    <button type="submit" 
+                            class="group relative w-full overflow-hidden bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105 transform border-2 border-transparent hover:border-white/20">
+                        <div class="flex items-center justify-center space-x-2 relative z-10">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                            </svg>
+                            <span>Import Students</span>
+                        </div>
+                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Subjects Import -->
+        <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full -translate-y-10 translate-x-10"></div>
+            
+            <div class="relative z-10">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Subjects</h2>
+                        <p class="text-sm text-gray-600">Import course subjects</p>
+                    </div>
+                </div>
+                
+                <!-- Download Template Button -->
+                <div class="mb-4">
+                    <a href="{% url 'download_subject_template' %}" 
+                       class="group relative overflow-hidden w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105 transform border-2 border-transparent hover:border-white/20">
+                        <div class="flex items-center space-x-2 relative z-10">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <span class="font-semibold">Download Template</span>
+                        </div>
+                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
+                    </a>
+                </div>
+                
+                <!-- Upload Form -->
+                <form method="post" action="{% url 'import_subjects' %}" enctype="multipart/form-data" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label for="subject_file" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <span>Excel File</span>
+                            </div>
+                        </label>
+                        <input type="file" 
+                               id="subject_file" 
+                               name="excel_file" 
+                               accept=".xlsx,.xls"
+                               required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-300 bg-white/70 backdrop-blur-sm hover:bg-white">
+                    </div>
+                    
+                    <button type="submit" 
+                            class="group relative w-full overflow-hidden bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105 transform border-2 border-transparent hover:border-white/20">
+                        <div class="flex items-center justify-center space-x-2 relative z-10">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                            </svg>
+                            <span>Import Subjects</span>
+                        </div>
+                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Professor Assignments Import -->
+        <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full -translate-y-10 translate-x-10"></div>
+            
+            <div class="relative z-10">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Assignments</h2>
+                        <p class="text-sm text-gray-600">Professor-batch assignments</p>
+                    </div>
+                </div>
+                
+                <!-- Download Template Button -->
+                <div class="mb-4">
+                    <a href="{% url 'download_assignment_template' %}" 
+                       class="group relative overflow-hidden w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105 transform border-2 border-transparent hover:border-white/20">
+                        <div class="flex items-center space-x-2 relative z-10">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <span class="font-semibold">Download Template</span>
+                        </div>
+                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
+                    </a>
+                </div>
+                
+                <!-- Upload Form -->
+                <form method="post" action="{% url 'import_assignments' %}" enctype="multipart/form-data" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label for="assignment_file" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <span>Excel File</span>
+                            </div>
+                        </label>
+                        <input type="file" 
+                               id="assignment_file" 
+                               name="excel_file" 
+                               accept=".xlsx,.xls"
+                               required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-white/70 backdrop-blur-sm hover:bg-white">
+                    </div>
+                    
+                    <button type="submit" 
+                            class="group relative w-full overflow-hidden bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105 transform border-2 border-transparent hover:border-white/20">
+                        <div class="flex items-center justify-center space-x-2 relative z-10">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                            </svg>
+                            <span>Import Assignments</span>
+                        </div>
+                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions Section -->
+    <div class="mt-8 bg-gradient-to-br from-white via-white to-blue-50 rounded-2xl shadow-xl border border-blue-200 p-6">
+        <div class="flex items-center space-x-3 mb-4">
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">Import Instructions</h2>
+        </div>
+        
+        <div class="grid gap-6 md:grid-cols-3">
+            <div class="space-y-2">
+                <h3 class="font-bold text-kjsit-red mb-2">📋 Before You Start</h3>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• Download the template files first</li>
+                    <li>• Fill in all required columns</li>
+                    <li>• Save files in Excel format (.xlsx or .xls)</li>
+                    <li>• Ensure data accuracy before importing</li>
+                </ul>
+            </div>
+            
+            <div class="space-y-2">
+                <h3 class="font-bold text-green-600 mb-2">✅ Import Order</h3>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• 1. Import Subjects first</li>
+                    <li>• 2. Import Professors second</li>
+                    <li>• 3. Import Students third</li>
+                    <li>• 4. Import Assignments last</li>
+                    <li>• 5. Create divisions/batches manually if needed</li>
+                </ul>
+            </div>
+            
+            <div class="space-y-2">
+                <h3 class="font-bold text-purple-600 mb-2">⚠️ Important Notes</h3>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• Duplicate entries will be skipped</li>
+                    <li>• Invalid data will show error messages</li>
+                    <li>• Check console messages after import</li>
+                    <li>• Large files may take time to process</li>
+                    <li>• Assignments link professors to practical batches</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

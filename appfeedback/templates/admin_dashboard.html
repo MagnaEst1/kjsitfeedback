@@ -5,112 +5,238 @@
 
 {% block content %}
 <div class="max-w-6xl mx-auto p-4">
-    <div class="bg-white rounded-lg shadow-lg shadow-neutral-500 border border-[#a50c22] p-6 mb-6">
-        <h1 class="text-3xl font-extrabold text-[#a50c22] mb-2">Admin Dashboard</h1>
-        <p class="text-black text-lg">Manage feedback forms and view system statistics</p>
-    </div>
-
-    <!-- Quick Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div class="bg-[#a50c22] text-white rounded-lg p-6 flex flex-col items-center justify-center">
-            <h3 class="text-lg font-semibold mb-2">Total Forms</h3>
-            <p class="text-3xl font-bold">{{ total_forms }}</p>
-        </div>
-        <div class="bg-[#a50c22] text-white rounded-lg p-6 flex flex-col items-center justify-center">
-            <h3 class="text-lg font-semibold mb-2">Active Forms</h3>
-            <p class="text-3xl font-bold">{{ active_forms }}</p>
-        </div>
-        <div class="bg-[#a50c22] text-white rounded-lg p-6 flex flex-col items-center justify-center">
-            <h3 class="text-lg font-semibold mb-2">Total Responses</h3>
-            <p class="text-3xl font-bold">{{ total_responses }}</p>
-        </div>
-        <div class="bg-[#a50c22] text-white rounded-lg p-6 flex flex-col items-center justify-center">
-            <h3 class="text-lg font-semibold mb-2">Response Rate</h3>
-            <p class="text-3xl font-bold">
-                {% if total_forms > 0 %}
-                    {{ total_responses|mul:100|div:total_forms|floatformat:1 }}%
-                {% else %}
-                    0%
-                {% endif %}
-            </p>
-        </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="bg-white rounded-lg shadow-lg shadow-neutral-500  border border-[#a50c22] p-6 mb-6">
-        <h2 class="text-2xl font-semibold text-[#a50c22] mb-4">Quick Actions</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <a href="{% url 'create_feedback_form' %}" 
-               class="flex items-center justify-center bg-green-700 text-white p-4 rounded-lg hover:bg-black transition-transform delay-50 duration-200 ease-in-out focus:scale-125">
-                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                </svg>
-                Create New Form
-            </a>
-            <a href="{% url 'manage_feedback_forms' %}" 
-               class="flex items-center justify-center bg-blue-700 text-white p-4 rounded-lg hover:bg-black transition">
-                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                </svg>
-                Manage Forms
-            </a>
-            <a href="/admin/" 
-               class="flex items-center justify-center bg-yellow-500 text-white p-4 rounded-lg hover:bg-black transition">
-                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-                Django Admin
-            </a>
-        </div>
-    </div>
-
-    <!-- Recent Forms -->
-    <div class="bg-white rounded-lg shadow-lg shadow-neutral-500  border border-[#a50c22] p-6">
-        <h2 class="text-2xl font-semibold text-[#a50c22] mb-4">Recent Forms</h2>
+    <!-- Enhanced Header -->
+    <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 mb-8 relative overflow-hidden">
+        <!-- Background decorative elements -->
+        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-kjsit-red/10 to-kjsit-red-light/10 rounded-full -translate-y-16 translate-x-16"></div>
+        <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-kjsit-red-light/10 to-kjsit-red/10 rounded-full translate-y-12 -translate-x-12"></div>
         
-        {% if recent_forms %}
-            <div class="overflow-x-auto rounded-md border border-[#a50c22]">
-                <table class="min-w-full divide-y divide-[#a50c22]">
-                    <thead class="bg-[#a50c22]">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Title</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Subject</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Professor</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Created</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-[#a50c22]">
-                        {% for form in recent_forms %}
+        <div class="relative z-10">
+            <div class="flex items-center space-x-4 mb-4">
+                <div class="w-16 h-16 bg-gradient-to-br from-kjsit-red via-kjsit-red-light to-kjsit-red/80 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-4xl font-extrabold bg-gradient-to-r from-kjsit-red to-kjsit-red-light bg-clip-text text-transparent mb-2">Admin Dashboard</h1>
+                    <p class="text-xl font-semibold text-gray-700">Manage feedback forms and view system statistics</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div class="group bg-gradient-to-br from-kjsit-red via-kjsit-red-light to-kjsit-red/80 text-white rounded-2xl p-8 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-10 translate-x-10 group-hover:scale-125 transition-transform duration-500"></div>
+            <div class="relative z-10 text-center">
+                <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-lg mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Total Forms</h3>
+                <p class="text-4xl font-extrabold">{{ total_forms }}</p>
+            </div>
+        </div>
+        
+        <div class="group bg-gradient-to-br from-kjsit-red/90 via-kjsit-red-light/85 to-kjsit-red/70 text-white rounded-2xl p-8 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 border border-kjsit-red/30">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-10 translate-x-10 group-hover:scale-125 transition-transform duration-500"></div>
+            <div class="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-kjsit-red-light/20 to-transparent rounded-full translate-y-8 -translate-x-8"></div>
+            <div class="relative z-10 text-center">
+                <div class="w-16 h-16 bg-white/25 rounded-2xl flex items-center justify-center shadow-xl mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 border border-white/20">
+                    <svg class="w-8 h-8 text-white drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold mb-2 drop-shadow-md">Active Forms</h3>
+                <p class="text-4xl font-extrabold drop-shadow-lg">{{ active_forms }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Quick Actions -->
+    <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 mb-8 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-kjsit-red/5 to-kjsit-red-light/5 rounded-full -translate-y-16 translate-x-16"></div>
+        
+        <div class="relative z-10">
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-12 h-12 bg-gradient-to-br from-kjsit-red to-kjsit-red-light rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-800">Quick Actions</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <a href="{% url 'create_feedback_form' %}" 
+                   class="group relative overflow-hidden bg-gradient-to-r from-kjsit-red to-kjsit-red-light hover:from-kjsit-red-light hover:to-kjsit-red text-white p-6 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 backdrop-blur-sm">
+                    <div class="absolute inset-0 bg-gradient-to-r from-kjsit-red/90 to-kjsit-red-light/90 rounded-2xl"></div>
+                    <div class="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/10 rounded-2xl"></div>
+                    <div class="flex items-center justify-center relative z-10">
+                        <svg class="w-8 h-8 mr-3 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        <span class="text-lg font-bold drop-shadow-md">Create New Form</span>
+                    </div>
+                    <!-- Enhanced shine effect -->
+                    <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-out"></div>
+                    <!-- Inner shadow for depth -->
+                    <div class="absolute inset-0 rounded-2xl shadow-inner shadow-black/20"></div>
+                </a>
+                
+                <a href="{% url 'manage_feedback_forms' %}" 
+                   class="group relative overflow-hidden bg-gradient-to-r from-kjsit-red/85 to-kjsit-red-light/85 hover:from-kjsit-red hover:to-kjsit-red-light text-white p-6 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 backdrop-blur-sm">
+                    <div class="absolute inset-0 bg-gradient-to-r from-kjsit-red/80 to-kjsit-red-light/80 rounded-2xl"></div>
+                    <div class="absolute inset-0 bg-gradient-to-b from-white/15 via-transparent to-black/15 rounded-2xl"></div>
+                    <div class="flex items-center justify-center relative z-10">
+                        <svg class="w-8 h-8 mr-3 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <span class="text-lg font-bold drop-shadow-md">Manage Forms</span>
+                    </div>
+                    <!-- Enhanced shine effect -->
+                    <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out"></div>
+                    <!-- Inner shadow for depth -->
+                    <div class="absolute inset-0 rounded-2xl shadow-inner shadow-black/15"></div>
+                </a>
+                
+                <a href="/admin/" 
+                   class="group relative overflow-hidden bg-gradient-to-r from-kjsit-red-light/90 to-kjsit-red/90 hover:from-kjsit-red hover:to-kjsit-red-light text-white p-6 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 backdrop-blur-sm">
+                    <div class="absolute inset-0 bg-gradient-to-r from-kjsit-red-light/85 to-kjsit-red/85 rounded-2xl"></div>
+                    <div class="absolute inset-0 bg-gradient-to-b from-white/12 via-transparent to-black/12 rounded-2xl"></div>
+                    <div class="flex items-center justify-center relative z-10">
+                        <svg class="w-8 h-8 mr-3 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span class="text-lg font-bold drop-shadow-md">Django Admin</span>
+                    </div>
+                    <!-- Enhanced shine effect -->
+                    <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out"></div>
+                    <!-- Inner shadow for depth -->
+                    <div class="absolute inset-0 rounded-2xl shadow-inner shadow-black/15"></div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Recent Forms -->
+    <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-kjsit-red/5 to-kjsit-red-light/5 rounded-full -translate-y-16 translate-x-16"></div>
+        
+        <div class="relative z-10">
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-12 h-12 bg-gradient-to-br from-kjsit-red to-kjsit-red-light rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-800">Recent Forms</h2>
+            </div>
+            
+            {% if recent_forms %}
+                <div class="overflow-x-auto rounded-2xl border border-kjsit-red/20 shadow-lg">
+                    <table class="min-w-full divide-y divide-kjsit-red/10">
+                        <thead class="bg-gradient-to-r from-kjsit-red to-kjsit-red-light">
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                                    <a href="{% url 'edit_feedback_form' form.id %}" class="text-[#a50c22] hover:text-black font-semibold">
-                                        {{ form.title }}
-                                    </a>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-black/80">
-                                    {{ form.subject.name }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-black/80">
-                                    {{ form.professor.user.get_full_name }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    {% if form.is_active %}
-                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                            Active
-                                        </span>
-                                    {% else %}
-                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                            Inactive
-                                        </span>
-                                    {% endif %}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-black/80">
-                                    {{ form.created_at|date:"M d, Y" }}
-                                </td>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
+                                        <span>Title</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                        </svg>
+                                        <span>Subject</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                        </svg>
+                                        <span>Professor</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <span>Status</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white uppercase tracking-wider">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4M8 7H4a1 1 0 00-1 1v4a1 1 0 001 1h1m0 0v7a1 1 0 001 1h8a1 1 0 001-1v-7m0 0h1a1 1 0 001-1V8a1 1 0 00-1-1h-4"/>
+                                        </svg>
+                                        <span>Created</span>
+                                    </div>
+                                </th>
                             </tr>
-                        {% endfor %}
+                        </thead>
+                        <tbody class="bg-white divide-y divide-kjsit-red/10">
+                            {% for form in recent_forms %}
+                                <tr class="hover:bg-kjsit-red/5 transition-all duration-200">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <a href="{% url 'edit_feedback_form' form.id %}" class="group flex items-center space-x-2 text-kjsit-red hover:text-kjsit-red-light font-semibold transition-all duration-200 hover:scale-105">
+                                            <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                            </svg>
+                                            <span>{{ form.title }}</span>
+                                        </a>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-2 h-2 bg-kjsit-red rounded-full"></div>
+                                            <span>{{ form.subject.name }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-8 h-8 bg-gradient-to-br from-kjsit-red to-kjsit-red-light rounded-full flex items-center justify-center">
+                                                <span class="text-white text-xs font-bold">{{ form.professor.user.get_full_name|first }}</span>
+                                            </div>
+                                            <span>{{ form.professor.user.get_full_name }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {% if form.is_active %}
+                                            <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-kjsit-red/10 text-kjsit-red border border-kjsit-red/20">
+                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+                                                Active
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-kjsit-red/20 text-kjsit-red/80 border border-kjsit-red/30">
+                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+                                                Inactive
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <div class="flex items-center space-x-2">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4M8 7H4a1 1 0 00-1 1v4a1 1 0 001 1h1m0 0v7a1 1 0 001 1h8a1 1 0 001-1v-7m0 0h1a1 1 0 001-1V8a1 1 0 00-1-1h-4"/>
+                                            </svg>
+                                            <span>{{ form.created_at|date:"M d, Y" }}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -122,20 +248,28 @@
                 </a>
             </div>
         {% else %}
-            <div class="text-center py-8">
-                <div class="text-black/40 mb-4">
-                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <div class="text-center py-12">
+                <div class="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center shadow-lg mx-auto mb-6">
+                    <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                 </div>
-                <h3 class="text-lg font-semibold text-black mb-2">No forms created yet</h3>
-                <p class="text-black/70 mb-4">Get started by creating your first feedback form.</p>
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">No feedback forms yet</h3>
+                <p class="text-gray-600 mb-6">Create your first feedback form to get started with collecting student responses.</p>
                 <a href="{% url 'create_feedback_form' %}" 
-                   class="inline-flex items-center px-4 py-2 bg-[#a50c22] text-white rounded-lg hover:bg-black transition">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                    </svg>
-                    Create First Form
+                   class="group relative overflow-hidden bg-gradient-to-r from-kjsit-red to-kjsit-red-light hover:from-kjsit-red-light hover:to-kjsit-red text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 backdrop-blur-sm">
+                    <div class="absolute inset-0 bg-gradient-to-r from-kjsit-red/90 to-kjsit-red-light/90 rounded-xl"></div>
+                    <div class="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/10 rounded-xl"></div>
+                    <div class="flex items-center space-x-2 relative z-10">
+                        <svg class="w-5 h-5 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        <span class="font-semibold drop-shadow-md">Create Your First Form</span>
+                    </div>
+                    <!-- Enhanced shine effect -->
+                    <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-out"></div>
+                    <!-- Inner shadow for depth -->
+                    <div class="absolute inset-0 rounded-xl shadow-inner shadow-black/20"></div>
                 </a>
             </div>
         {% endif %}

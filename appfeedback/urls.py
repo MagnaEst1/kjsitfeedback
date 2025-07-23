@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.home_view, name='home'),
+    path('adminlogin/', views.admin_login_view, name='admin_login'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     
     # Admin views for feedback management
@@ -32,4 +33,17 @@ urlpatterns = [
     path('ajax/get-subjects/', views.get_subjects_by_type, name='get_subjects_by_type'),
     path('ajax/get-professors/', views.get_professors_by_subject_division, name='get_professors_by_subject_division'),
     path('ajax/get-batches/', views.get_batches_by_division, name='get_batches_by_division'),
+    path('ajax/update-question/<int:form_id>/<int:question_id>/', views.update_question_ajax, name='update_question_ajax'),
+    path('ajax/delete-question/<int:form_id>/<int:question_id>/', views.delete_question_ajax, name='delete_question_ajax'),
+    
+    # Import data endpoints
+    path('import-data/', views.import_data_view, name='import_data'),
+    path('download-professor-template/', views.download_professor_template, name='download_professor_template'),
+    path('download-student-template/', views.download_student_template, name='download_student_template'),
+    path('download-subject-template/', views.download_subject_template, name='download_subject_template'),
+    path('download-assignment-template/', views.download_assignment_template, name='download_assignment_template'),
+    path('import-professors/', views.import_professors, name='import_professors'),
+    path('import-students/', views.import_students, name='import_students'),
+    path('import-subjects/', views.import_subjects, name='import_subjects'),
+    path('import-assignments/', views.import_assignments, name='import_assignments'),
 ]

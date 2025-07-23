@@ -1,5 +1,7 @@
 import json
 from django import template
+from django.utils import timezone
+from datetime import timedelta
 
 register = template.Library()
 
@@ -46,3 +48,15 @@ def percentage(value, total):
         return (float(value) / float(total)) * 100
     except (ValueError, TypeError, ZeroDivisionError):
         return 0
+
+@register.filter
+def is_recently_created(created_at, hours=2):
+    """Check if the object was created within the specified hours (default 2 hours)"""
+    try:
+        if not created_at:
+            return False
+        now = timezone.now()
+        cutoff = now - timedelta(hours=int(hours))
+        return created_at > cutoff
+    except (ValueError, TypeError):
+        return False

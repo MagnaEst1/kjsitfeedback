@@ -37,7 +37,7 @@ AUTHENTICATION_BACKENDS = [
     
 ]
 # Application definition
-
+CSRF_TRUSTED_ORIGINS = ["https://*.ngrok-free.app"]
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -164,7 +164,6 @@ LOGIN_REDIRECT_URL = '/'
 # Where to redirect after logout
 LOGOUT_REDIRECT_URL = '/'
 SITE_ID = 1
-SOCIALACCOUNT_ONLY = True
 ACCOUNT_LOGOUT_ON_GET = True
 SOCIALACCOUNT_LOGIN_ON_GET=True
 ALLAUTH_UI_THEME = "dark"
