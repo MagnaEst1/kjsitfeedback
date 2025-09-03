@@ -39,7 +39,7 @@ class Subject(models.Model):
     SUBJECT_TYPES = [
         ('theory', 'Theory'),
         ('practical', 'Practical'),
-        ('sat', 'SAT'),
+        ('tutorials', 'Tutorials'),
     ]
     
     name = models.CharField(max_length=100)
@@ -70,9 +70,9 @@ class PracticalBatch(models.Model):
 
 
 class PracticalAssignment(models.Model):
-    """Assignment of professors to teach practical subjects for specific batches"""
+    """Assignment of professors to teach practical and tutorial subjects for specific batches"""
     professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, limit_choices_to={'subject_type': 'practical'})
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, limit_choices_to={'subject_type__in': ['practical', 'tutorials']})
     batch = models.ForeignKey(PracticalBatch, on_delete=models.CASCADE)
     
     class Meta:
@@ -81,6 +81,28 @@ class PracticalAssignment(models.Model):
     
     def __str__(self):
         return f"{self.professor.user.get_full_name()} - {self.subject.code} ({self.batch})"
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        
+        # Ensure professor is only assigned to one batch for practical/tutorial subjects
+        if self.subject and self.subject.subject_type in ['practical', 'tutorials']:
+            existing_assignments = PracticalAssignment.objects.filter(
+                professor=self.professor,
+                subject__subject_type__in=['practical', 'tutorials']
+            )
+            
+            # Exclude current instance if it's being updated
+            if self.pk:
+                existing_assignments = existing_assignments.exclude(pk=self.pk)
+            
+            if existing_assignments.exists():
+                existing_batch = existing_assignments.first().batch
+                raise ValidationError(f"Professor {self.professor.user.get_full_name()} is already assigned to teach practical/tutorial subjects for batch {existing_batch.name}. A professor can only teach one batch for practical/tutorial subjects.")
+    
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
 
 class Student(models.Model):
@@ -94,7 +116,7 @@ class Student(models.Model):
 
 
 class TeacherAssignment(models.Model):
-    """Assignment of teachers to subjects for theory and SAT classes"""
+    """Assignment of teachers to subjects for theory classes"""
     professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     division = models.ForeignKey(Division, on_delete=models.CASCADE)
@@ -105,6 +127,28 @@ class TeacherAssignment(models.Model):
     
     def __str__(self):
         return f"{self.professor} - {self.subject.code} ({self.division})"
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        
+        # Ensure professor is only assigned to one division for theory subjects
+        if self.subject and self.subject.subject_type == 'theory':
+            existing_assignments = TeacherAssignment.objects.filter(
+                professor=self.professor,
+                subject__subject_type='theory'
+            )
+            
+            # Exclude current instance if it's being updated
+            if self.pk:
+                existing_assignments = existing_assignments.exclude(pk=self.pk)
+            
+            if existing_assignments.exists():
+                existing_division = existing_assignments.first().division
+                raise ValidationError(f"Professor {self.professor.user.get_full_name()} is already assigned to teach theory subjects for division {existing_division.name}. A professor can only teach one division for theory subjects.")
+    
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
 
 class FeedbackForm(models.Model):
@@ -133,13 +177,13 @@ class FeedbackForm(models.Model):
     def clean(self):
         from django.core.exceptions import ValidationError
         
-        # If subject is practical, practical_batch must be specified
-        if self.subject.subject_type == 'practical' and not self.practical_batch:
-            raise ValidationError("Practical batch must be specified for practical subjects")
+        # If subject is practical or tutorials, practical_batch must be specified
+        if self.subject.subject_type in ['practical', 'tutorials'] and not self.practical_batch:
+            raise ValidationError("Practical batch must be specified for practical and tutorial subjects")
         
-        # If subject is not practical, practical_batch should be None
-        if self.subject.subject_type != 'practical' and self.practical_batch:
-            raise ValidationError("Practical batch should not be specified for non-practical subjects")
+        # If subject is theory, practical_batch should be None
+        if self.subject.subject_type == 'theory' and self.practical_batch:
+            raise ValidationError("Practical batch should not be specified for theory subjects")
         
         # If practical_batch is specified, ensure it belongs to the same division
         if self.practical_batch and self.practical_batch.division != self.division:

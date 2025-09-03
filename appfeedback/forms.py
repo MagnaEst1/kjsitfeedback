@@ -83,10 +83,10 @@ class FeedbackFormCreationForm(forms.ModelForm):
         start_date = cleaned_data.get('start_date')
         end_date = cleaned_data.get('end_date')
         
-        # Validate practical batch for practical subjects
-        if subject and subject.subject_type == 'practical':
+        # Validate practical batch for practical and tutorial subjects
+        if subject and subject.subject_type in ['practical', 'tutorials']:
             if not practical_batch:
-                raise ValidationError("Practical batch is required for practical subjects.")
+                raise ValidationError("Practical batch is required for practical and tutorial subjects.")
             
             # Ensure practical batch belongs to the selected division
             if practical_batch.division != division:
@@ -101,12 +101,25 @@ class FeedbackFormCreationForm(forms.ModelForm):
                 )
             except PracticalAssignment.DoesNotExist:
                 raise ValidationError("The selected professor is not assigned to teach this subject for the selected batch.")
-        
-        elif subject and subject.subject_type in ['theory', 'sat']:
-            if practical_batch:
-                raise ValidationError("Practical batch should not be selected for theory/SAT subjects.")
             
-            # Check if there's a teacher assignment for theory/SAT subjects
+            # Ensure professor is not assigned to other batches for practical/tutorial subjects
+            other_assignments = PracticalAssignment.objects.filter(
+                professor=professor,
+                subject__subject_type__in=['practical', 'tutorials']
+            ).exclude(
+                subject=subject,
+                batch=practical_batch
+            )
+            
+            if other_assignments.exists():
+                other_batch = other_assignments.first().batch
+                raise ValidationError(f"The selected professor is already assigned to teach practical/tutorial subjects for batch {other_batch.name}. A professor can only teach one batch for practical/tutorial subjects.")
+        
+        elif subject and subject.subject_type == 'theory':
+            if practical_batch:
+                raise ValidationError("Practical batch should not be selected for theory subjects.")
+            
+            # Check if there's a teacher assignment for theory subjects
             try:
                 TeacherAssignment.objects.get(
                     professor=professor,
@@ -115,6 +128,19 @@ class FeedbackFormCreationForm(forms.ModelForm):
                 )
             except TeacherAssignment.DoesNotExist:
                 raise ValidationError("The selected professor is not assigned to teach this subject for the selected division.")
+            
+            # Ensure professor is not assigned to other divisions for theory subjects
+            other_assignments = TeacherAssignment.objects.filter(
+                professor=professor,
+                subject__subject_type='theory'
+            ).exclude(
+                subject=subject,
+                division=division
+            )
+            
+            if other_assignments.exists():
+                other_division = other_assignments.first().division
+                raise ValidationError(f"The selected professor is already assigned to teach theory subjects for division {other_division.name}. A professor can only teach one division for theory subjects.")
         
         # Validate date range
         if start_date and end_date:

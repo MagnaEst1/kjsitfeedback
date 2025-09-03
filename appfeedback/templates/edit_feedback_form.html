@@ -124,9 +124,9 @@
 
                 <!-- Practical Batch (Third - conditional) -->
                 <div id="practical-batch-field" class="md:col-span-2" 
-                     style="display: {% if feedback_form.subject.subject_type == 'practical' %}block{% else %}none{% endif %};">
+                     style="display: {% if feedback_form.subject.subject_type == 'practical' or feedback_form.subject.subject_type == 'tutorials' %}block{% else %}none{% endif %};">
                     <label for="{{ form.practical_batch.id_for_label }}" class="block text-sm font-medium text-black mb-2">
-                        Practical Batch * (Required for Practical subjects)
+                        Practical Batch * (Required for Practical and Tutorial subjects)
                     </label>
                     {{ form.practical_batch }}
                     {% if form.practical_batch.errors %}
@@ -298,16 +298,16 @@ document.addEventListener('DOMContentLoaded', function() {
         resetDependentFields(['practical_batch', 'subject', 'professor']);
         
         // Show/hide practical batch field based on subject type
-        if (subjectType === 'practical') {
+        if (subjectType === 'practical' || subjectType === 'tutorials') {
             practicalBatchField.style.display = 'block';
             updateBatches();
         } else {
             practicalBatchField.style.display = 'none';
-            updateSubjects(); // For theory/SAT subjects, directly update subjects
+            updateSubjects(); // For theory subjects, directly update subjects
         }
     });
     
-    // Step 3: Handle practical batch change (for practical/SAT subjects)
+    // Step 3: Handle practical batch change (for practical/tutorial subjects)
     practicalBatchSelect.addEventListener('change', function() {
         resetDependentFields(['subject', 'professor']);
         updateSubjects();
@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function initializeForm() {
         // Set initial visibility of practical batch field
         const currentSubjectType = subjectTypeField.value;
-        if (currentSubjectType === 'practical' || currentSubjectType === 'sat') {
+        if (currentSubjectType === 'practical' || currentSubjectType === 'tutorials') {
             practicalBatchField.style.display = 'block';
         }
     }

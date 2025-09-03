@@ -146,7 +146,7 @@
                                 <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                                 </svg>
-                                <span>Practical Batch * (Required for Practical subjects)</span>
+                                <span>Practical Batch * (Required for Practical and Tutorial subjects)</span>
                             </div>
                         </label>
                         <div class="relative">
@@ -764,7 +764,7 @@
                         <svg class="w-5 h-5 text-kjsit-red mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        <p class="text-sm text-gray-700">For practical subjects, you must select a practical batch</p>
+                        <p class="text-sm text-gray-700">For practical and tutorial subjects, you must select a practical batch</p>
                     </div>
                     
                     <div class="flex items-start space-x-3 p-3 bg-kjsit-red/10 rounded-lg border border-kjsit-red/30">
@@ -780,7 +780,7 @@
                         <svg class="w-5 h-5 text-kjsit-red mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
                         </svg>
-                        <p class="text-sm text-gray-700">For theory/SAT subjects, practical batch should be left empty</p>
+                        <p class="text-sm text-gray-700">For theory subjects, practical batch should be left empty</p>
                     </div>
                     
                     <div class="flex items-start space-x-3 p-3 bg-kjsit-red/15 rounded-lg border border-kjsit-red/40">
@@ -817,16 +817,16 @@ document.addEventListener('DOMContentLoaded', function() {
         resetDependentFields(['practical_batch', 'subject', 'professor']);
         
         // Show/hide practical batch field based on subject type
-        if (subjectType === 'practical') {
+        if (subjectType === 'practical' || subjectType === 'tutorials') {
             practicalBatchField.style.display = 'block';
             updateBatches();
         } else {
             practicalBatchField.style.display = 'none';
-            updateSubjects(); // For theory/SAT subjects, directly update subjects
+            updateSubjects(); // For theory subjects, directly update subjects
         }
     });
     
-    // Step 3: Handle practical batch change (for practical/SAT subjects)
+    // Step 3: Handle practical batch change (for practical/tutorial subjects)
     practicalBatchSelect.addEventListener('change', function() {
         resetDependentFields(['subject', 'professor']);
         updateSubjects();
@@ -886,8 +886,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (subjectType && divisionId) {
             let url = `/ajax/get-subjects/?subject_type=${subjectType}&division_id=${divisionId}`;
             
-            // For practical subjects, also include batch
-            if (subjectType === 'practical' && practicalBatchId) {
+            // For practical and tutorial subjects, also include batch
+            if ((subjectType === 'practical' || subjectType === 'tutorials') && practicalBatchId) {
                 url += `&practical_batch_id=${practicalBatchId}`;
             }
             

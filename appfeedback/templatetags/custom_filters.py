@@ -50,6 +50,11 @@ def percentage(value, total):
         return 0
 
 @register.filter
+def add_class(value):
+    """Get the class/type of the value"""
+    return str(type(value).__name__)
+
+@register.filter
 def is_recently_created(created_at, hours=2):
     """Check if the object was created within the specified hours (default 2 hours)"""
     try:

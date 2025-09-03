@@ -147,7 +147,7 @@
                                 <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                                 </svg>
-                                <span>Practical Batch * (Required for Practical subjects)</span>
+                                <span>Practical Batch * (Required for Practical and Tutorial subjects)</span>
                             </div>
                         </label>
                         <div class="relative">
@@ -497,16 +497,19 @@ function initializeFormDependencies() {
         resetDependentFields(['practical_batch', 'subject', 'professor']);
         
         // Show/hide practical batch field based on subject type
-        if (subjectType === 'practical') {
+        if (subjectType === 'practical' || subjectType === 'tutorials') {
             practicalBatchField.style.display = 'block';
             updateBatches();
         } else {
             practicalBatchField.style.display = 'none';
-            updateSubjects(); // For theory/SAT subjects, directly update subjects
+            updateSubjects(); // For theory subjects, directly update subjects
         }
+        
+        // Load default questions for the selected subject type
+        loadDefaultQuestions(subjectType);
     });
     
-    // Step 3: Handle practical batch change (for practical/SAT subjects)
+    // Step 3: Handle practical batch change (for practical/tutorial subjects)
     practicalBatchSelect.addEventListener('change', function() {
         resetDependentFields(['subject', 'professor']);
         updateSubjects();
@@ -566,8 +569,8 @@ function initializeFormDependencies() {
         if (subjectType && divisionId) {
             let url = `/ajax/get-subjects/?subject_type=${subjectType}&division_id=${divisionId}`;
             
-            // For practical subjects, also include batch
-            if (subjectType === 'practical' && practicalBatchId) {
+            // For practical and tutorial subjects, also include batch
+            if ((subjectType === 'practical' || subjectType === 'tutorials') && practicalBatchId) {
                 url += `&practical_batch_id=${practicalBatchId}`;
             }
             
@@ -635,6 +638,42 @@ function initializeFormDependencies() {
             const subjectName = subjectText.split(' - ')[1].split(' (')[0];
             titleField.value = `Feedback for ${subjectName} - ${divisionText}`;
         }
+    }
+    
+    function loadDefaultQuestions(subjectType) {
+        if (!subjectType) {
+            return;
+        }
+        
+        fetch(`/ajax/get-default-questions/?subject_type=${subjectType}`)
+            .then(response => response.json())
+            .then(data => {
+                // Clear existing questions
+                questions = [];
+                questionIdCounter = 1;
+                
+                // Load new questions from the server
+                data.questions.forEach(questionData => {
+                    questions.push({
+                        id: questionIdCounter++,
+                        text: questionData.text,
+                        type: questionData.type,
+                        required: questionData.required,
+                        choices: questionData.choices || []
+                    });
+                });
+                
+                // Re-render questions and update counter
+                renderQuestions();
+                updateQuestionCounter();
+                
+                // Show notification
+                showNotification(`Loaded ${data.questions.length} default questions for ${subjectType} subjects!`, 'success');
+            })
+            .catch(error => {
+                console.error('Error loading default questions:', error);
+                showNotification('Failed to load default questions. Using fallback questions.', 'error');
+            });
     }
 }
 
@@ -879,7 +918,10 @@ function showNotification(message, type = 'success') {
     notification.innerHTML = `
         <div class="flex items-center space-x-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                ${type === 'success' ? 
+                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>' :
+                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+                }
             </svg>
             <span>${message}</span>
         </div>

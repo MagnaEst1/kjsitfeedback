@@ -11,6 +11,8 @@ from django.forms import formset_factory
 from django.core.exceptions import ValidationError
 import pandas as pd
 import openpyxl
+import json
+import csv
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -68,10 +70,10 @@ def dashboard_view(request):
         # Get all active feedback forms for this student
         current_time = timezone.now()
         
-        # Theory and SAT forms for student's division
-        theory_sat_forms = FeedbackForm.objects.filter(
+        # Theory forms for student's division
+        theory_forms = FeedbackForm.objects.filter(
             division=student.division,
-            subject__subject_type__in=['theory', 'sat'],
+            subject__subject_type='theory',
             is_active=True,
             start_date__lte=current_time,
             end_date__gte=current_time
@@ -79,12 +81,12 @@ def dashboard_view(request):
             responses__student=student
         ).select_related('subject', 'professor', 'division')
         
-        # Practical forms for student's practical batch
-        practical_forms = []
+        # Practical and tutorial forms for student's practical batch
+        practical_tutorial_forms = []
         if student.practical_batch:
-            practical_forms = FeedbackForm.objects.filter(
+            practical_tutorial_forms = FeedbackForm.objects.filter(
                 practical_batch=student.practical_batch,
-                subject__subject_type='practical',
+                subject__subject_type__in=['practical', 'tutorials'],
                 is_active=True,
                 start_date__lte=current_time,
                 end_date__gte=current_time
@@ -93,7 +95,7 @@ def dashboard_view(request):
             ).select_related('subject', 'professor', 'division', 'practical_batch')
         
         # Combine all available forms
-        available_forms = list(theory_sat_forms) + list(practical_forms)
+        available_forms = list(theory_forms) + list(practical_tutorial_forms)
         
         # Get completed forms
         completed_forms = FeedbackResponse.objects.filter(
@@ -203,16 +205,83 @@ def create_feedback_form_view(request):
 
 
 def _create_default_questions(feedback_form):
-    """Helper method to create default questions"""
-    default_questions = [
-        {"text": "Rate the overall teaching quality", "type": "rating", "order": 1},
-        {"text": "How would you rate the clarity of explanations?", "type": "rating", "order": 2},
-        {"text": "Rate the professor's punctuality", "type": "rating", "order": 3},
-        {"text": "How helpful was the professor in addressing doubts?", "type": "rating", "order": 4},
-        {"text": "Any additional comments or suggestions", "type": "text", "order": 5, "required": False},
+    """Helper method to create default questions based on subject type"""
+    # Determine subject type to get appropriate questions
+    subject_type = feedback_form.subject.subject_type
+    
+    # Define questions for each subject type
+    theory_questions = [
+        "Ability to stimulate students interest by generating questions / enquiry during Lectures, Practical and Tutorials",
+        "Teaching / Instructing methodology using different facilities (chalkboard / LCD etc.) as appropriate for the topic",
+        "Handling doubts/ questions",
+        "Approach towards subject, Practical and Tutorials",
+        "Organisation of Lecture, Practical and Tutorials",
+        "Pace of teaching / Instructions",
+        "Knowlege of topic, Practical and Tutorials",
+        "Medium of language- Use of English",
+        "Manner of initiation of Lecture, Practical and Tutorials by mentioning the aims /Objective of the topics / practical/ assignment – under consideration",
+        "Punctuality & Regularity during Lecture, Practical and Tutorials",
+        "Behaviour of faculty towards students",
+        "Overall impression",
+        "Any other criticism",
+        "Improvement"
     ]
     
-    for q_data in default_questions:
+    practical_questions = [
+        "Organisation of Lecture, Practical and Tutorials",
+        "Pace of teaching / Instructions",
+        "Knowlege of topic, Practical and Tutorials",
+        "Medium of language- Use of English",
+        "Manner of initiation of Lecture, Practical and Tutorials by mentioning the aims /Objective of the topics / practical/ assignment – under consideration",
+        "Punctuality & Regularity during Lecture, Practical and Tutorials",
+        "Behaviour of faculty towards students",
+        "Overall impression",
+        "Any other feedback"
+    ]
+    
+    tutorial_questions = [
+        "Organisation of Lecture, Practical and Tutorials",
+        "Pace of teaching / Instructions",
+        "Knowlege of topic, Practical and Tutorials",
+        "Medium of language- Use of English",
+        "Manner of initiation of Lecture, Practical and Tutorials by mentioning the aims /Objective of the topics / practical/ assignment – under consideration",
+        "Punctuality & Regularity during Lecture, Practical and Tutorials",
+        "Behaviour of faculty towards students",
+        "Overall impression",
+        "Any other feedback"
+    ]
+    
+    # Select questions based on subject type
+    if subject_type == 'theory':
+        selected_questions = theory_questions
+    elif subject_type == 'practical':
+        selected_questions = practical_questions
+    elif subject_type == 'tutorials':
+        selected_questions = tutorial_questions
+    else:
+        # Fallback to theory questions
+        selected_questions = theory_questions
+    
+    # Create question objects
+    questions_list = []
+    for i, question_text in enumerate(selected_questions, 1):
+        # Determine question type based on content
+        if any(keyword in question_text.lower() for keyword in ['criticism', 'feedback', 'improvement', 'comment', 'suggestion']):
+            question_type = 'text'
+            is_required = False
+        else:
+            question_type = 'rating'
+            is_required = True
+        
+        questions_list.append({
+            "text": question_text,
+            "type": question_type,
+            "order": i,
+            "required": is_required
+        })
+    
+    # Create and save questions
+    for q_data in questions_list:
         question = FeedbackQuestion(
             form=feedback_form,
             question_text=q_data["text"],
@@ -222,7 +291,7 @@ def _create_default_questions(feedback_form):
         )
         question.save()
     
-    return len(default_questions)
+    return len(questions_list)
 
 
 @login_required
@@ -498,10 +567,10 @@ def fill_feedback_form_view(request, form_id):
     
     # Check if student is eligible for this form
     eligible = False
-    if feedback_form.subject.subject_type in ['theory', 'sat']:
+    if feedback_form.subject.subject_type == 'theory':
         if feedback_form.division == student.division:
             eligible = True
-    elif feedback_form.subject.subject_type == 'practical':
+    elif feedback_form.subject.subject_type in ['practical', 'tutorials']:
         if feedback_form.practical_batch == student.practical_batch:
             eligible = True
     
@@ -613,16 +682,16 @@ def get_subjects_by_type(request):
     # Base query for subjects of the specified type
     subjects_query = Subject.objects.filter(subject_type=subject_type)
     
-    # For practical subjects, filter by assignments to specific batches
-    if subject_type == 'practical' and division_id and practical_batch_id:
+    # For practical and tutorial subjects, filter by assignments to specific batches
+    if subject_type in ['practical', 'tutorials'] and division_id and practical_batch_id:
         # Get subjects that have practical assignments for this batch
         assigned_subjects = PracticalAssignment.objects.filter(
             batch_id=practical_batch_id
         ).values_list('subject_id', flat=True)
         subjects_query = subjects_query.filter(id__in=assigned_subjects)
     
-    # For theory/SAT subjects, filter by teacher assignments to the division
-    elif subject_type in ['theory', 'sat'] and division_id:
+    # For theory subjects, filter by teacher assignments to the division
+    elif subject_type == 'theory' and division_id:
         # Get subjects that have teacher assignments for this division
         assigned_subjects = TeacherAssignment.objects.filter(
             division_id=division_id
@@ -647,18 +716,52 @@ def get_professors_by_subject_division(request):
     try:
         subject = Subject.objects.get(id=subject_id)
         
-        if subject.subject_type == 'practical' and practical_batch_id:
-            # For practical subjects, get professors from PracticalAssignment for specific batch
+        if subject.subject_type in ['practical', 'tutorials'] and practical_batch_id:
+            # For practical and tutorial subjects, get professors who:
+            # 1. Are assigned to this specific subject and batch
+            # 2. Are not already assigned to any other batch for practical/tutorial subjects
+            assigned_professors = PracticalAssignment.objects.filter(
+                subject=subject,
+                batch_id=practical_batch_id
+            ).values_list('professor_id', flat=True)
+            
+            # Get professors who are not assigned to other batches for practical/tutorial subjects
+            professors_with_other_batches = PracticalAssignment.objects.exclude(
+                subject=subject,
+                batch_id=practical_batch_id
+            ).filter(
+                subject__subject_type__in=['practical', 'tutorials']
+            ).values_list('professor_id', flat=True)
+            
+            # Only include professors assigned to this batch and not assigned to other batches
+            available_professor_ids = [pid for pid in assigned_professors if pid not in professors_with_other_batches]
+            
             professors = Professor.objects.filter(
-                practicalassignment__subject=subject,
-                practicalassignment__batch_id=practical_batch_id
-            ).distinct().values('id', 'user__first_name', 'user__last_name', 'employee_id')
+                id__in=available_professor_ids
+            ).values('id', 'user__first_name', 'user__last_name', 'employee_id')
         else:
-            # For theory/SAT subjects, get professors from TeacherAssignment
+            # For theory subjects, get professors who:
+            # 1. Are assigned to this specific subject and division
+            # 2. Are not already assigned to any other division for theory subjects
+            assigned_professors = TeacherAssignment.objects.filter(
+                subject=subject,
+                division_id=division_id
+            ).values_list('professor_id', flat=True)
+            
+            # Get professors who are assigned to other divisions for theory subjects
+            professors_with_other_divisions = TeacherAssignment.objects.exclude(
+                subject=subject,
+                division_id=division_id
+            ).filter(
+                subject__subject_type='theory'
+            ).values_list('professor_id', flat=True)
+            
+            # Only include professors assigned to this division and not assigned to other divisions
+            available_professor_ids = [pid for pid in assigned_professors if pid not in professors_with_other_divisions]
+            
             professors = Professor.objects.filter(
-                teacherassignment__subject=subject,
-                teacherassignment__division_id=division_id
-            ).distinct().values('id', 'user__first_name', 'user__last_name', 'employee_id')
+                id__in=available_professor_ids
+            ).values('id', 'user__first_name', 'user__last_name', 'employee_id')
         
         # Format professor names
         professor_list = []
@@ -686,6 +789,94 @@ def get_batches_by_division(request):
         return JsonResponse({'batches': list(batches)})
     except Division.DoesNotExist:
         return JsonResponse({'batches': []})
+
+
+@login_required
+@user_passes_test(is_admin)
+def get_default_questions_by_subject_type(request):
+    """Get default questions for a subject type"""
+    subject_type = request.GET.get('subject_type')
+    
+    if not subject_type:
+        return JsonResponse({'questions': []})
+    
+    # Define questions for each subject type
+    theory_questions = [
+        "Ability to stimulate students interest by generating questions / enquiry during Lectures, Practical and Tutorials",
+        "Teaching / Instructing methodology using different facilities (chalkboard / LCD etc.) as appropriate for the topic",
+        "Handling doubts/ questions",
+        "Approach towards subject, Practical and Tutorials",
+        "Organisation of Lecture, Practical and Tutorials",
+        "Pace of teaching / Instructions",
+        "Knowlege of topic, Practical and Tutorials",
+        "Medium of language- Use of English",
+        "Manner of initiation of Lecture, Practical and Tutorials by mentioning the aims /Objective of the topics / practical/ assignment – under consideration",
+        "Punctuality & Regularity during Lecture, Practical and Tutorials",
+        "Behaviour of faculty towards students",
+        "Overall impression",
+        "Any other criticism",
+        "Improvement"
+    ]
+    
+    practical_questions = [
+        "Organisation of Lecture, Practical and Tutorials",
+        "Pace of teaching / Instructions",
+        "Knowlege of topic, Practical and Tutorials",
+        "Medium of language- Use of English",
+        "Manner of initiation of Lecture, Practical and Tutorials by mentioning the aims /Objective of the topics / practical/ assignment – under consideration",
+        "Punctuality & Regularity during Lecture, Practical and Tutorials",
+        "Behaviour of faculty towards students",
+        "Overall impression",
+        "Any other feedback"
+    ]
+    
+    tutorial_questions = [
+        "Organisation of Lecture, Practical and Tutorials",
+        "Pace of teaching / Instructions",
+        "Knowlege of topic, Practical and Tutorials",
+        "Medium of language- Use of English",
+        "Manner of initiation of Lecture, Practical and Tutorials by mentioning the aims /Objective of the topics / practical/ assignment – under consideration",
+        "Punctuality & Regularity during Lecture, Practical and Tutorials",
+        "Behaviour of faculty towards students",
+        "Overall impression",
+        "Any other feedback"
+    ]
+    
+    # Select questions based on subject type
+    if subject_type == 'theory':
+        selected_questions = theory_questions
+    elif subject_type == 'practical':
+        selected_questions = practical_questions
+    elif subject_type == 'tutorials':
+        selected_questions = tutorial_questions
+    else:
+        # Fallback questions
+        selected_questions = [
+            "Rate the overall teaching quality",
+            "How would you rate the clarity of explanations?",
+            "Rate the professor's punctuality",
+            "How helpful was the professor in addressing doubts?",
+            "Any additional comments or suggestions"
+        ]
+    
+    # Create question objects
+    questions_list = []
+    for question_text in selected_questions:
+        # Determine question type based on content
+        if any(keyword in question_text.lower() for keyword in ['criticism', 'feedback', 'improvement', 'comment', 'suggestion']):
+            question_type = 'text'
+            is_required = False
+        else:
+            question_type = 'rating'
+            is_required = True
+        
+        questions_list.append({
+            "text": question_text,
+            "type": question_type,
+            "required": is_required
+        })
+    
+    return JsonResponse({'questions': questions_list})
 
 
 @login_required
@@ -737,6 +928,9 @@ def view_feedback_responses(request, form_id):
     # Calculate overall statistics
     total_responses = responses.count()
     
+    # Get ALL responses for question analysis (not filtered)
+    all_responses = FeedbackResponse.objects.filter(form=feedback_form)
+    
     # Calculate eligible students count
     if feedback_form.practical_batch:
         # For practical subjects, count students in the specific batch
@@ -753,7 +947,7 @@ def view_feedback_responses(request, form_id):
     # Calculate count of active forms
     active_forms_count = FeedbackForm.objects.filter(is_active=True).count()
     
-    # Prepare question-wise analysis
+    # Prepare question-wise analysis (using ALL responses, not filtered)
     question_responses = []
     for question in questions:
         question_data = {
@@ -765,7 +959,7 @@ def view_feedback_responses(request, form_id):
             # Get all rating responses for this question
             rating_answers = FeedbackAnswer.objects.filter(
                 question=question,
-                response__form=feedback_form,
+                response__in=all_responses,  # Use all_responses instead of form filter
                 rating_answer__isnull=False
             ).values_list('rating_answer', flat=True)
             
@@ -782,13 +976,33 @@ def view_feedback_responses(request, form_id):
             # Get all text responses for this question
             text_answers = FeedbackAnswer.objects.filter(
                 question=question,
-                response__form=feedback_form,
+                response__in=all_responses,  # Use all_responses instead of form filter
                 text_answer__isnull=False
             ).exclude(text_answer='').values_list('text_answer', flat=True)
             
             question_data.update({
                 'text_responses': list(text_answers),
                 'total_responses': len(text_answers),
+            })
+        
+        elif question.question_type == 'multiple_choice':
+            # Get all multiple choice responses for this question
+            choice_answers = FeedbackAnswer.objects.filter(
+                question=question,
+                response__in=all_responses,  # Use all_responses instead of form filter
+                choice_answer__isnull=False
+            ).exclude(choice_answer='').values_list('choice_answer', flat=True)
+            
+            choice_list = list(choice_answers)
+            
+            # Calculate choice distribution
+            choice_distribution = {}
+            for choice in choice_list:
+                choice_distribution[choice] = choice_distribution.get(choice, 0) + 1
+            
+            question_data.update({
+                'choice_distribution': choice_distribution,
+                'total_responses': len(choice_list),
             })
         
         question_responses.append(question_data)
@@ -861,9 +1075,6 @@ def bulk_delete_responses(request, form_id):
 @user_passes_test(is_admin)
 def export_responses(request, form_id):
     """Export feedback responses to CSV"""
-    import csv
-    from django.http import HttpResponse
-    
     feedback_form = get_object_or_404(FeedbackForm, id=form_id)
     
     if not request.user.is_staff:
@@ -957,6 +1168,163 @@ def test_messages_view(request):
     messages.info(request, "This is an info message!")
     
     return redirect('admin_dashboard')
+
+
+@login_required
+@user_passes_test(is_admin)
+def bulk_generate_feedback_forms(request):
+    """Generate feedback forms for all assignments automatically"""
+    if request.method == 'POST':
+        form_title_prefix = request.POST.get('form_title_prefix', 'Feedback')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        
+        if not start_date or not end_date:
+            messages.error(request, "Please provide both start and end dates.")
+            return redirect('admin_dashboard')
+        
+        try:
+            from datetime import datetime
+            start_date = datetime.fromisoformat(start_date.replace('T', ' '))
+            end_date = datetime.fromisoformat(end_date.replace('T', ' '))
+            
+            if start_date >= end_date:
+                messages.error(request, "End date must be after start date.")
+                return redirect('admin_dashboard')
+            
+            created_count = 0
+            skipped_count = 0
+            errors = []
+            
+            with transaction.atomic():
+                # Generate forms for theory subjects (TeacherAssignments)
+                theory_assignments = TeacherAssignment.objects.select_related(
+                    'professor', 'subject', 'division'
+                ).filter(subject__subject_type='theory')
+                
+                for assignment in theory_assignments:
+                    try:
+                        # Check if form already exists
+                        existing_form = FeedbackForm.objects.filter(
+                            subject=assignment.subject,
+                            professor=assignment.professor,
+                            division=assignment.division,
+                            practical_batch__isnull=True
+                        ).first()
+                        
+                        if existing_form:
+                            skipped_count += 1
+                            continue
+                        
+                        # Create form title
+                        form_title = f"{form_title_prefix} - {assignment.subject.name} - {assignment.professor.user.get_full_name()} - {assignment.division}"
+                        
+                        # Create feedback form
+                        feedback_form = FeedbackForm.objects.create(
+                            title=form_title,
+                            description=f"Automated feedback form for {assignment.subject.name} (Theory)",
+                            subject=assignment.subject,
+                            professor=assignment.professor,
+                            division=assignment.division,
+                            practical_batch=None,
+                            start_date=start_date,
+                            end_date=end_date,
+                            is_active=True,
+                            allow_anonymous=True,
+                            created_by=request.user
+                        )
+                        
+                        # Create default questions
+                        _create_default_questions(feedback_form)
+                        created_count += 1
+                        
+                    except Exception as e:
+                        errors.append(f"Theory - {assignment.subject.code} - {assignment.professor.employee_id}: {str(e)}")
+                
+                # Generate forms for practical/tutorial subjects (PracticalAssignments)
+                practical_assignments = PracticalAssignment.objects.select_related(
+                    'professor', 'subject', 'batch__division'
+                ).filter(subject__subject_type__in=['practical', 'tutorials'])
+                
+                for assignment in practical_assignments:
+                    try:
+                        # Check if form already exists
+                        existing_form = FeedbackForm.objects.filter(
+                            subject=assignment.subject,
+                            professor=assignment.professor,
+                            division=assignment.batch.division,
+                            practical_batch=assignment.batch
+                        ).first()
+                        
+                        if existing_form:
+                            skipped_count += 1
+                            continue
+                        
+                        # Create form title
+                        form_title = f"{form_title_prefix} - {assignment.subject.name} - {assignment.professor.user.get_full_name()} - {assignment.batch}"
+                        
+                        # Create feedback form
+                        feedback_form = FeedbackForm.objects.create(
+                            title=form_title,
+                            description=f"Automated feedback form for {assignment.subject.name} ({assignment.subject.get_subject_type_display()})",
+                            subject=assignment.subject,
+                            professor=assignment.professor,
+                            division=assignment.batch.division,
+                            practical_batch=assignment.batch,
+                            start_date=start_date,
+                            end_date=end_date,
+                            is_active=True,
+                            allow_anonymous=True,
+                            created_by=request.user
+                        )
+                        
+                        # Create default questions
+                        _create_default_questions(feedback_form)
+                        created_count += 1
+                        
+                    except Exception as e:
+                        errors.append(f"Practical/Tutorial - {assignment.subject.code} - {assignment.professor.employee_id} - {assignment.batch.name}: {str(e)}")
+            
+            # Show results
+            if created_count > 0:
+                messages.success(request, f"Successfully created {created_count} feedback forms!")
+            
+            if skipped_count > 0:
+                messages.info(request, f"Skipped {skipped_count} forms (already exist).")
+            
+            if errors:
+                error_msg = "Errors encountered:\n" + "\n".join(errors[:5])
+                if len(errors) > 5:
+                    error_msg += f"\n... and {len(errors) - 5} more errors."
+                messages.error(request, error_msg)
+                
+        except ValueError as e:
+            messages.error(request, f"Invalid date format: {e}")
+        except Exception as e:
+            messages.error(request, f"Error generating forms: {e}")
+    
+    return redirect('admin_dashboard')
+
+
+@login_required
+@user_passes_test(is_admin)
+def bulk_generate_forms_page(request):
+    """Page to configure bulk form generation"""
+    # Get assignment statistics
+    theory_count = TeacherAssignment.objects.filter(subject__subject_type='theory').count()
+    practical_count = PracticalAssignment.objects.filter(subject__subject_type__in=['practical', 'tutorials']).count()
+    
+    # Get existing forms count
+    existing_forms = FeedbackForm.objects.count()
+    
+    context = {
+        'theory_assignments_count': theory_count,
+        'practical_assignments_count': practical_count,
+        'total_assignments': theory_count + practical_count,
+        'existing_forms_count': existing_forms,
+    }
+    
+    return render(request, 'bulk_generate_forms.html', context)
 
 
 @login_required
@@ -1137,7 +1505,7 @@ def download_subject_template(request):
     sample_data = [
         ['Data Structures', 'CS201', 'theory', '2', '3'],
         ['Database Management Lab', 'CS202L', 'practical', '2', '3'],
-        ['Software Engineering', 'CS203', 'sat', '2', '4'],
+        ['Software Engineering', 'CS203', 'tutorials', '2', '4'],
     ]
     
     for row, data in enumerate(sample_data, 2):
@@ -1150,7 +1518,7 @@ def download_subject_template(request):
     instructions = [
         "Instructions for Subjects Import:",
         "",
-        "1. Subject Type: Must be one of: theory, practical, sat",
+        "1. Subject Type: Must be one of: theory, practical, tutorials",
         "2. Year: Enter year number (1, 2, 3, 4)",
         "3. Semester: Enter semester number (1-8)",
         "4. Subject Code: Must be unique",
@@ -1158,7 +1526,7 @@ def download_subject_template(request):
         "Subject Type Definitions:",
         "- theory: Regular theory subjects",
         "- practical: Laboratory/practical subjects",
-        "- sat: Student Assessment Test subjects"
+        "- tutorials: Tutorial subjects"
     ]
     
     for row, instruction in enumerate(instructions, 1):
@@ -1465,7 +1833,7 @@ def import_subjects(request):
             
             imported_count = 0
             errors = []
-            valid_types = ['theory', 'practical', 'sat']
+            valid_types = ['theory', 'practical', 'tutorials']
             
             with transaction.atomic():
                 for index, row in df.iterrows():
@@ -1550,8 +1918,8 @@ def import_assignments(request):
                         # Get subject
                         try:
                             subject = Subject.objects.get(code=row['Subject Code'])
-                            if subject.subject_type != 'practical':
-                                errors.append(f"Row {index + 2}: Subject '{row['Subject Code']}' is not a practical subject")
+                            if subject.subject_type not in ['practical', 'tutorials']:
+                                errors.append(f"Row {index + 2}: Subject '{row['Subject Code']}' is not a practical or tutorial subject")
                                 continue
                         except Subject.DoesNotExist:
                             errors.append(f"Row {index + 2}: Subject with code '{row['Subject Code']}' does not exist")

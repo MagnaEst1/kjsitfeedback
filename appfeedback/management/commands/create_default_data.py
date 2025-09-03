@@ -1,6 +1,8 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
+from django.conf import settings
 from appfeedback.models import Division, Subject, Professor, PracticalBatch, PracticalAssignment, TeacherAssignment
+import os
 
 
 class Command(BaseCommand):
@@ -53,11 +55,11 @@ class Command(BaseCommand):
             {'name': 'Cloud Computing', 'code': 'CC', 'type': 'theory', 'year': 4, 'semester': 7},
             {'name': 'Project Lab', 'code': 'PROJ', 'type': 'practical', 'year': 4, 'semester': 7},
             
-            # SAT subjects for all years
-            {'name': 'Soft Skills Development', 'code': 'SSD', 'type': 'sat', 'year': 1, 'semester': 1},
-            {'name': 'Professional Ethics', 'code': 'PE', 'type': 'sat', 'year': 2, 'semester': 3},
-            {'name': 'Communication Skills', 'code': 'CS', 'type': 'sat', 'year': 3, 'semester': 5},
-            {'name': 'Industry Readiness', 'code': 'IR', 'type': 'sat', 'year': 4, 'semester': 7},
+            # Tutorial subjects for all years
+            {'name': 'Soft Skills Development', 'code': 'SSD', 'type': 'tutorials', 'year': 1, 'semester': 1},
+            {'name': 'Professional Ethics', 'code': 'PE', 'type': 'tutorials', 'year': 2, 'semester': 3},
+            {'name': 'Communication Skills', 'code': 'CS', 'type': 'tutorials', 'year': 3, 'semester': 5},
+            {'name': 'Industry Readiness', 'code': 'IR', 'type': 'tutorials', 'year': 4, 'semester': 7},
         ]
         
         subjects_created = 0
@@ -167,14 +169,14 @@ class Command(BaseCommand):
         
         self.stdout.write(f'Created {assignments_created} new practical assignments')
         
-        # Create teacher assignments for theory and SAT subjects
-        # Each theory/SAT subject gets ONE professor per division
+        # Create teacher assignments for theory and tutorial subjects
+        # Each theory/tutorial subject gets ONE professor per division
         teacher_assignments_created = 0
-        theory_sat_subjects = Subject.objects.filter(subject_type__in=['theory', 'sat'])
+        theory_subjects = Subject.objects.filter(subject_type='theory')
         
         if professors:
             professor_index = 0
-            for subject in theory_sat_subjects:
+            for subject in theory_subjects:
                 # Get divisions for the same year as the subject
                 year_divisions = Division.objects.filter(year=subject.year)
                 
@@ -194,6 +196,34 @@ class Command(BaseCommand):
                         self.stdout.write(f'Created teacher assignment: {assignment}')
         
         self.stdout.write(f'Created {teacher_assignments_created} new teacher assignments')
+        
+        # Create practical assignments for tutorial subjects (similar to practical subjects)
+        # Each tutorial subject gets ONE professor per batch
+        tutorial_assignments_created = 0
+        tutorial_subjects = Subject.objects.filter(subject_type='tutorials')
+        
+        if professors:
+            professor_index = 0
+            for subject in tutorial_subjects:
+                # Get batches for the same year as the subject
+                year_batches = PracticalBatch.objects.filter(division__year=subject.year)
+                
+                # Assign ONE professor to this subject for all batches
+                assigned_professor = professors[professor_index % len(professors)]
+                professor_index += 1
+                
+                for batch in year_batches:
+                    assignment, created = PracticalAssignment.objects.get_or_create(
+                        professor=assigned_professor,
+                        subject=subject,
+                        batch=batch
+                    )
+                    
+                    if created:
+                        tutorial_assignments_created += 1
+                        self.stdout.write(f'Created tutorial assignment: {assignment}')
+        
+        self.stdout.write(f'Created {tutorial_assignments_created} new tutorial assignments')
         
         # Create a demo student
         student_user, created = User.objects.get_or_create(
@@ -251,6 +281,7 @@ class Command(BaseCommand):
                 f'- Professors: {Professor.objects.count()}\n'
                 f'- Practical Batches: {PracticalBatch.objects.count()}\n'
                 f'- Practical Assignments: {PracticalAssignment.objects.count()}\n'
+                f'- Teacher Assignments: {TeacherAssignment.objects.count()}\n'
                 f'- Users: {User.objects.count()}\n'
             )
         )

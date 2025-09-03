@@ -265,7 +265,7 @@
                                                   rows="4" 
                                                   id="question-choices-{{ question.id }}"
                                                   name="choices"
-                                                  placeholder="Enter each choice on a new line">{% if question.choices %}{% for choice in question.choices %}{{ choice }}&#10;{% endfor %}{% endif %}</textarea>
+                                                  placeholder="Enter each choice on a new line">{% if question.choices %}{% load custom_filters %}{% if question.choices|add_class == "list" %}{% for choice in question.choices %}{{ choice }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}{% else %}{% for choice in question.choices|parse_json %}{{ choice }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}{% endif %}{% endif %}</textarea>
                                     </div>
                                     
                                     <!-- Action Buttons -->
@@ -299,9 +299,16 @@
                             <div class="text-sm text-gray-600 question-choices-display" id="choices-display-{{ question.id }}">
                                 <span class="font-semibold text-kjsit-red">Choices:</span>
                                 <div class="flex flex-wrap gap-2 mt-2">
-                                    {% for choice in question.choices %}
-                                        <span class="inline-block bg-gradient-to-r from-kjsit-red/10 to-kjsit-red-light/10 text-kjsit-red border border-kjsit-red/20 rounded-lg px-3 py-1 text-xs font-medium">{{ choice }}</span>
-                                    {% endfor %}
+                                    {% load custom_filters %}
+                                    {% if question.choices|add_class == "list" %}
+                                        {% for choice in question.choices %}
+                                            <span class="inline-block bg-gradient-to-r from-kjsit-red/10 to-kjsit-red-light/10 text-kjsit-red border border-kjsit-red/20 rounded-lg px-3 py-1 text-xs font-medium">{{ choice }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        {% for choice in question.choices|parse_json %}
+                                            <span class="inline-block bg-gradient-to-r from-kjsit-red/10 to-kjsit-red-light/10 text-kjsit-red border border-kjsit-red/20 rounded-lg px-3 py-1 text-xs font-medium">{{ choice }}</span>
+                                        {% endfor %}
+                                    {% endif %}
                                 </div>
                             </div>
                         {% endif %}
