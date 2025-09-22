@@ -102,18 +102,8 @@ class FeedbackFormCreationForm(forms.ModelForm):
             except PracticalAssignment.DoesNotExist:
                 raise ValidationError("The selected professor is not assigned to teach this subject for the selected batch.")
             
-            # Ensure professor is not assigned to other batches for practical/tutorial subjects
-            other_assignments = PracticalAssignment.objects.filter(
-                professor=professor,
-                subject__subject_type__in=['practical', 'tutorials']
-            ).exclude(
-                subject=subject,
-                batch=practical_batch
-            )
-            
-            if other_assignments.exists():
-                other_batch = other_assignments.first().batch
-                raise ValidationError(f"The selected professor is already assigned to teach practical/tutorial subjects for batch {other_batch.name}. A professor can only teach one batch for practical/tutorial subjects.")
+            # Constraint removed - professors can now be assigned to multiple batches
+            pass
         
         elif subject and subject.subject_type == 'theory':
             if practical_batch:
@@ -129,18 +119,8 @@ class FeedbackFormCreationForm(forms.ModelForm):
             except TeacherAssignment.DoesNotExist:
                 raise ValidationError("The selected professor is not assigned to teach this subject for the selected division.")
             
-            # Ensure professor is not assigned to other divisions for theory subjects
-            other_assignments = TeacherAssignment.objects.filter(
-                professor=professor,
-                subject__subject_type='theory'
-            ).exclude(
-                subject=subject,
-                division=division
-            )
-            
-            if other_assignments.exists():
-                other_division = other_assignments.first().division
-                raise ValidationError(f"The selected professor is already assigned to teach theory subjects for division {other_division.name}. A professor can only teach one division for theory subjects.")
+            # Constraint removed - professors can now be assigned to multiple divisions
+            pass
         
         # Validate date range
         if start_date and end_date:

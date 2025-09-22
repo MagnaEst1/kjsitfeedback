@@ -1317,11 +1317,20 @@ def bulk_generate_forms_page(request):
     # Get existing forms count
     existing_forms = FeedbackForm.objects.count()
     
+    # Get server time in Asia/Kolkata timezone
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    server_now = timezone.now()
+    one_week_later = server_now + timedelta(weeks=1)
+    
     context = {
         'theory_assignments_count': theory_count,
         'practical_assignments_count': practical_count,
         'total_assignments': theory_count + practical_count,
         'existing_forms_count': existing_forms,
+        'server_start_time': server_now.strftime('%Y-%m-%dT%H:%M'),
+        'server_end_time': one_week_later.strftime('%Y-%m-%dT%H:%M'),
     }
     
     return render(request, 'bulk_generate_forms.html', context)

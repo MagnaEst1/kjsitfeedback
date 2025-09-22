@@ -83,25 +83,11 @@ class PracticalAssignment(models.Model):
         return f"{self.professor.user.get_full_name()} - {self.subject.code} ({self.batch})"
     
     def clean(self):
-        from django.core.exceptions import ValidationError
-        
-        # Ensure professor is only assigned to one batch for practical/tutorial subjects
-        if self.subject and self.subject.subject_type in ['practical', 'tutorials']:
-            existing_assignments = PracticalAssignment.objects.filter(
-                professor=self.professor,
-                subject__subject_type__in=['practical', 'tutorials']
-            )
-            
-            # Exclude current instance if it's being updated
-            if self.pk:
-                existing_assignments = existing_assignments.exclude(pk=self.pk)
-            
-            if existing_assignments.exists():
-                existing_batch = existing_assignments.first().batch
-                raise ValidationError(f"Professor {self.professor.user.get_full_name()} is already assigned to teach practical/tutorial subjects for batch {existing_batch.name}. A professor can only teach one batch for practical/tutorial subjects.")
+        # Validation removed - professors can now be assigned to multiple batches
+        pass
     
     def save(self, *args, **kwargs):
-        self.clean()
+        # Skip validation for now
         super().save(*args, **kwargs)
 
 
@@ -129,25 +115,11 @@ class TeacherAssignment(models.Model):
         return f"{self.professor} - {self.subject.code} ({self.division})"
     
     def clean(self):
-        from django.core.exceptions import ValidationError
-        
-        # Ensure professor is only assigned to one division for theory subjects
-        if self.subject and self.subject.subject_type == 'theory':
-            existing_assignments = TeacherAssignment.objects.filter(
-                professor=self.professor,
-                subject__subject_type='theory'
-            )
-            
-            # Exclude current instance if it's being updated
-            if self.pk:
-                existing_assignments = existing_assignments.exclude(pk=self.pk)
-            
-            if existing_assignments.exists():
-                existing_division = existing_assignments.first().division
-                raise ValidationError(f"Professor {self.professor.user.get_full_name()} is already assigned to teach theory subjects for division {existing_division.name}. A professor can only teach one division for theory subjects.")
+        # Validation removed - professors can now be assigned to multiple divisions
+        pass
     
     def save(self, *args, **kwargs):
-        self.clean()
+        # Skip validation for now
         super().save(*args, **kwargs)
 
 
