@@ -15,17 +15,29 @@ class DivisionAdmin(admin.ModelAdmin):
 
 @admin.register(Professor)
 class ProfessorAdmin(admin.ModelAdmin):
-    list_display = ['user', 'employee_id', 'department']
-    search_fields = ['user__first_name', 'user__last_name', 'employee_id']
+    list_display = ['get_full_name', 'get_username', 'employee_id', 'department']
+    search_fields = ['user__first_name', 'user__last_name', 'employee_id', 'user__username']
     list_filter = ['department']
+    
+    def get_full_name(self, obj):
+        return obj.user.get_full_name()
+    get_full_name.short_description = 'Full Name'
+    
+    def get_username(self, obj):
+        return obj.user.username
+    get_username.short_description = 'Username'
 
 
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'subject_type', 'year', 'semester']
-    list_filter = ['subject_type', 'year', 'semester']
+    list_display = ['code', 'name', 'subject_type', 'get_year', 'semester']
+    list_filter = ['subject_type', 'semester']
     search_fields = ['name', 'code']
-    ordering = ['year', 'semester', 'name']
+    ordering = ['semester', 'name']
+    
+    def get_year(self, obj):
+        return obj.year
+    get_year.short_description = 'Year'
 
 
 @admin.register(PracticalBatch)
@@ -38,22 +50,26 @@ class PracticalBatchAdmin(admin.ModelAdmin):
 
 @admin.register(PracticalAssignment)
 class PracticalAssignmentAdmin(admin.ModelAdmin):
-    list_display = ['professor', 'subject', 'batch']
-    list_filter = ['subject', 'batch__division__year']
+    list_display = ['professor', 'subject', 'batch', 'semester']
+    list_filter = ['subject', 'batch__division__year', 'semester']
     search_fields = ['professor__user__first_name', 'professor__user__last_name', 'subject__name']
 
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ['roll_number', 'user', 'division', 'practical_batch']
-    search_fields = ['roll_number', 'user__first_name', 'user__last_name']
-    list_filter = ['division__year', 'division__name', 'practical_batch']
+    list_display = ['roll_number', 'user', 'get_year', 'semester', 'division', 'practical_batch', 'department']
+    search_fields = ['roll_number', 'user__first_name', 'user__last_name', 'department']
+    list_filter = ['semester', 'division__name', 'practical_batch', 'department']
+    
+    def get_year(self, obj):
+        return obj.year
+    get_year.short_description = 'Year'
 
 
 @admin.register(TeacherAssignment)
 class TeacherAssignmentAdmin(admin.ModelAdmin):
-    list_display = ['professor', 'subject', 'division']
-    list_filter = ['subject__subject_type', 'division__year']
+    list_display = ['professor', 'subject', 'division', 'semester']
+    list_filter = ['subject__subject_type', 'division__year', 'semester']
     search_fields = ['professor__user__first_name', 'professor__user__last_name', 'subject__name']
 
 

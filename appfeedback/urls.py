@@ -45,8 +45,10 @@ urlpatterns = [
     path('download-student-template/', views.download_student_template, name='download_student_template'),
     path('download-subject-template/', views.download_subject_template, name='download_subject_template'),
     path('download-assignment-template/', views.download_assignment_template, name='download_assignment_template'),
+    path('download-theory-assignment-template/', views.download_theory_assignment_template, name='download_theory_assignment_template'),
     path('import-professors/', views.import_professors, name='import_professors'),
     path('import-students/', views.import_students, name='import_students'),
     path('import-subjects/', views.import_subjects, name='import_subjects'),
     path('import-assignments/', views.import_assignments, name='import_assignments'),
+    path('import-theory-assignments/', views.import_theory_assignments, name='import_theory_assignments'),
 ]

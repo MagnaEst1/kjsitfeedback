@@ -45,11 +45,15 @@ class Subject(models.Model):
     name = models.CharField(max_length=100)
     code = models.CharField(max_length=20, unique=True)
     subject_type = models.CharField(max_length=20, choices=SUBJECT_TYPES)
-    year = models.PositiveIntegerField()
     semester = models.PositiveIntegerField()
     
     class Meta:
-        ordering = ['year', 'semester', 'name']
+        ordering = ['semester', 'name']
+    
+    @property
+    def year(self):
+        """Calculate year from semester (1-2 = year 1, 3-4 = year 2, etc.)"""
+        return ((self.semester - 1) // 2) + 1
     
     def __str__(self):
         return f"{self.code} - {self.name} ({self.get_subject_type_display()})"
@@ -74,13 +78,14 @@ class PracticalAssignment(models.Model):
     professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, limit_choices_to={'subject_type__in': ['practical', 'tutorials']})
     batch = models.ForeignKey(PracticalBatch, on_delete=models.CASCADE)
+    semester = models.PositiveIntegerField(help_text="Semester number (1-8)", default=1)
     
     class Meta:
-        unique_together = ['professor', 'subject', 'batch']
-        ordering = ['batch', 'subject']
+        unique_together = ['professor', 'subject', 'batch', 'semester']
+        ordering = ['batch', 'subject', 'semester']
     
     def __str__(self):
-        return f"{self.professor.user.get_full_name()} - {self.subject.code} ({self.batch})"
+        return f"{self.professor.user.get_full_name()} - {self.subject.code} ({self.batch}) - Sem {self.semester}"
     
     def clean(self):
         # Validation removed - professors can now be assigned to multiple batches
@@ -94,11 +99,18 @@ class PracticalAssignment(models.Model):
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     roll_number = models.CharField(max_length=20, unique=True)
+    semester = models.PositiveIntegerField(default=1, help_text="Semester number (1-8)")
     division = models.ForeignKey(Division, on_delete=models.CASCADE)
     practical_batch = models.ForeignKey(PracticalBatch, on_delete=models.CASCADE, null=True, blank=True)
+    department = models.CharField(max_length=100, default='Computer Engineering')
+    
+    @property
+    def year(self):
+        """Calculate year from semester (1-2 = year 1, 3-4 = year 2, etc.)"""
+        return ((self.semester - 1) // 2) + 1
     
     def __str__(self):
-        return f"{self.roll_number} - {self.user.get_full_name()}"
+        return f"{self.roll_number} - {self.user.get_full_name()} (Sem {self.semester}, {self.department})"
 
 
 class TeacherAssignment(models.Model):
@@ -106,13 +118,14 @@ class TeacherAssignment(models.Model):
     professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     division = models.ForeignKey(Division, on_delete=models.CASCADE)
+    semester = models.PositiveIntegerField(help_text="Semester number (1-8)",default=1)
     
     class Meta:
-        unique_together = ['professor', 'subject', 'division']
-        ordering = ['division', 'subject']
+        unique_together = ['professor', 'subject', 'division', 'semester']
+        ordering = ['division', 'subject', 'semester']
     
     def __str__(self):
-        return f"{self.professor} - {self.subject.code} ({self.division})"
+        return f"{self.professor} - {self.subject.code} ({self.division}) - Sem {self.semester}"
     
     def clean(self):
         # Validation removed - professors can now be assigned to multiple divisions

@@ -1364,7 +1364,7 @@ def download_professor_template(request):
     
     # Headers
     headers = [
-        'First Name', 'Last Name', 'Email', 'Username', 'Employee ID', 'Department'
+        'First Name', 'Last Name', 'Employee ID', 'Department'
     ]
     
     for col, header in enumerate(headers, 1):
@@ -1376,8 +1376,8 @@ def download_professor_template(request):
     
     # Sample data
     sample_data = [
-        ['John', 'Doe', 'john.doe@kjsit.edu', 'john.doe', 'EMP001', 'Computer Engineering'],
-        ['Jane', 'Smith', 'jane.smith@kjsit.edu', 'jane.smith', 'EMP002', 'Information Technology'],
+        ['John', 'Doe', 'EMP001', 'Computer Engineering'],
+        ['Jane', 'Smith', 'EMP002', 'Information Technology'],
     ]
     
     for row, data in enumerate(sample_data, 2):
@@ -1423,7 +1423,7 @@ def download_student_template(request):
     
     # Headers
     headers = [
-        'First Name', 'Last Name', 'Email', 'Username', 'Roll Number', 'Division', 'Year', 'Practical Batch'
+        'First Name', 'Last Name', 'Email', 'Username', 'Roll Number', 'Division', 'Semester', 'Practical Batch', 'Department'
     ]
     
     for col, header in enumerate(headers, 1):
@@ -1435,8 +1435,8 @@ def download_student_template(request):
     
     # Sample data
     sample_data = [
-        ['Alice', 'Johnson', 'alice.johnson@student.kjsit.edu', 'alice.johnson', 'CS2023001', 'A', '2', 'A1'],
-        ['Bob', 'Williams', 'bob.williams@student.kjsit.edu', 'bob.williams', 'CS2023002', 'A', '2', 'A2'],
+        ['Alice', 'Johnson', 'alice.johnson@student.kjsit.edu', 'alice.johnson', 'CS2023001', 'A', '3', 'A1', 'Computer Engineering'],
+        ['Bob', 'Williams', 'bob.williams@student.kjsit.edu', 'bob.williams', 'CS2023002', 'A', '3', 'A2', 'Computer Engineering'],
     ]
     
     for row, data in enumerate(sample_data, 2):
@@ -1450,13 +1450,16 @@ def download_student_template(request):
         "Instructions for Students Import:",
         "",
         "1. Division: Enter division letter (A, B, C, etc.)",
-        "2. Year: Enter year number (1, 2, 3, 4)",
+        "2. Semester: Enter semester number (1-8). Year will be auto-calculated.",
         "3. Practical Batch: Enter batch name (A1, A2, B1, etc.) - Optional",
         "4. Email: Must be unique",
         "5. Username: Must be unique",
         "6. Roll Number: Must be unique",
+        "7. Department: Enter department name (e.g., Computer Engineering, Electronics, etc.)",
         "",
-        "Note: Division and Practical Batch must exist in the system before importing students."
+        "Note: Division and Practical Batch must exist in the system before importing students.",
+        "Year is automatically calculated from semester (1-2=Year1, 3-4=Year2, etc.)",
+        "Default department will be 'Computer Engineering' if not specified."
     ]
     
     for row, instruction in enumerate(instructions, 1):
@@ -1500,7 +1503,7 @@ def download_subject_template(request):
     
     # Headers
     headers = [
-        'Subject Name', 'Subject Code', 'Subject Type', 'Year', 'Semester'
+        'Subject Name', 'Subject Code', 'Subject Type', 'Semester'
     ]
     
     for col, header in enumerate(headers, 1):
@@ -1512,9 +1515,9 @@ def download_subject_template(request):
     
     # Sample data
     sample_data = [
-        ['Data Structures', 'CS201', 'theory', '2', '3'],
-        ['Database Management Lab', 'CS202L', 'practical', '2', '3'],
-        ['Software Engineering', 'CS203', 'tutorials', '2', '4'],
+        ['Data Structures', 'CS201', 'theory', '3'],
+        ['Database Management Lab', 'CS202L', 'practical', '3'],
+        ['Software Engineering', 'CS203', 'tutorials', '4'],
     ]
     
     for row, data in enumerate(sample_data, 2):
@@ -1528,9 +1531,12 @@ def download_subject_template(request):
         "Instructions for Subjects Import:",
         "",
         "1. Subject Type: Must be one of: theory, practical, tutorials",
-        "2. Year: Enter year number (1, 2, 3, 4)",
-        "3. Semester: Enter semester number (1-8)",
-        "4. Subject Code: Must be unique",
+        "2. Semester: Enter semester number (1-8)",
+        "   - Semesters 1-2 = Year 1 (First Year)",
+        "   - Semesters 3-4 = Year 2 (Second Year)", 
+        "   - Semesters 5-6 = Year 3 (Third Year)",
+        "   - Semesters 7-8 = Year 4 (Final Year)",
+        "3. Subject Code: Must be unique",
         "",
         "Subject Type Definitions:",
         "- theory: Regular theory subjects",
@@ -1579,7 +1585,7 @@ def download_assignment_template(request):
     
     # Headers
     headers = [
-        'Professor Employee ID', 'Subject Code', 'Division Name', 'Division Year', 'Batch Name'
+        'Professor Employee ID', 'Subject Code', 'Division Name', 'Batch Name', 'Semester'
     ]
     
     for col, header in enumerate(headers, 1):
@@ -1591,9 +1597,9 @@ def download_assignment_template(request):
     
     # Sample data
     sample_data = [
-        ['EMP001', 'CS202L', 'A', '2', 'A1'],
-        ['EMP002', 'CS202L', 'A', '2', 'A2'],
-        ['EMP001', 'CS205L', 'B', '2', 'B1'],
+        ['EMP001', 'CS202L', 'A', 'A1', '3'],
+        ['EMP002', 'CS202L', 'A', 'A2', '3'],
+        ['EMP001', 'CS205L', 'B', 'B1', '4'],
     ]
     
     for row, data in enumerate(sample_data, 2):
@@ -1609,7 +1615,7 @@ def download_assignment_template(request):
         "1. Professor Employee ID: Must exist in the system",
         "2. Subject Code: Must exist and be of type 'practical'",
         "3. Division Name: Division letter (A, B, C, etc.)",
-        "4. Division Year: Year number (1, 2, 3, 4)",
+        "4. Year: Year number (1, 2, 3, 4)",
         "5. Batch Name: Batch name within the division (A1, A2, B1, etc.)",
         "",
         "Note: This assigns professors to teach practical subjects for specific batches.",
@@ -1640,6 +1646,86 @@ def download_assignment_template(request):
 
 @login_required
 @user_passes_test(is_admin)
+def download_theory_assignment_template(request):
+    """Download Excel template for theory professor-division assignments"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Theory Assignments Template"
+    
+    # Header style
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="a50c22", end_color="a50c22", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Headers
+    headers = [
+        'Professor Employee ID', 'Subject Code', 'Division Name', 'Semester'
+    ]
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = thin_border
+    
+    # Sample data
+    sample_data = [
+        ['EMP001', 'CS201', 'A', '3'],
+        ['EMP002', 'CS202', 'A', '3'],
+        ['EMP001', 'CS301', 'B', '5'],
+    ]
+    
+    for row, data in enumerate(sample_data, 2):
+        for col, value in enumerate(data, 1):
+            cell = ws.cell(row=row, column=col, value=value)
+            cell.border = thin_border
+    
+    # Add instructions sheet
+    ws2 = wb.create_sheet("Instructions")
+    instructions = [
+        "Instructions for Theory Professor-Division Assignments Import:",
+        "",
+        "1. Professor Employee ID: Must exist in the system",
+        "2. Subject Code: Must exist and be of type 'theory'",
+        "3. Division Name: Division letter (A, B, C, etc.)",
+        "4. Semester: Enter semester number (1-8). Year will be auto-calculated.",
+        "",
+        "Note: This assigns professors to teach theory subjects to entire divisions.",
+        "Both professor and division must exist before importing assignments.",
+        "Year is automatically calculated from semester (1-2=Year1, 3-4=Year2, etc.)",
+        "",
+        "Example: EMP001 teaching CS201 to division A, semester 3 (Year 2)"
+    ]
+    
+    for row, instruction in enumerate(instructions, 1):
+        ws2.cell(row=row, column=1, value=instruction)
+    
+    # Adjust column widths
+    for col in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 20
+    
+    # Create response
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename=theory_assignments_template.xlsx'
+    return response
+
+
+@login_required
+@user_passes_test(is_admin)
 def import_professors(request):
     """Import professors from Excel file"""
     if request.method == 'POST':
@@ -1655,7 +1741,7 @@ def import_professors(request):
         
         try:
             df = pd.read_excel(file)
-            required_columns = ['First Name', 'Last Name', 'Email', 'Username', 'Employee ID', 'Department']
+            required_columns = ['First Name', 'Last Name', 'Employee ID', 'Department']
             
             # Check if all required columns exist
             missing_columns = [col for col in required_columns if col not in df.columns]
@@ -1667,27 +1753,32 @@ def import_professors(request):
             errors = []
             
             with transaction.atomic():
-                for index, row in df.iterrows():
+                for row_idx, (index, row) in enumerate(df.iterrows()):
+                    row_num = row_idx + 2  # Add 2 for Excel row number (1-indexed + header)
                     try:
-                        # Check if user already exists
-                        if User.objects.filter(username=row['Username']).exists():
-                            errors.append(f"Row {index + 2}: Username '{row['Username']}' already exists")
-                            continue
+                        # Auto-generate username as firstname.lastname
+                        first_name = str(row['First Name']).strip()
+                        last_name = str(row['Last Name']).strip()
+                        username = f"{first_name.lower()}.{last_name.lower()}"
                         
-                        if User.objects.filter(email=row['Email']).exists():
-                            errors.append(f"Row {index + 2}: Email '{row['Email']}' already exists")
-                            continue
+                        # Handle duplicate usernames by adding numbers
+                        base_username = username
+                        counter = 1
+                        while User.objects.filter(username=username).exists():
+                            username = f"{base_username}{counter}"
+                            counter += 1
                         
+                        # Check if employee ID already exists
                         if Professor.objects.filter(employee_id=row['Employee ID']).exists():
-                            errors.append(f"Row {index + 2}: Employee ID '{row['Employee ID']}' already exists")
+                            errors.append(f"Row {row_num}: Employee ID '{row['Employee ID']}' already exists")
                             continue
                         
-                        # Create user
+                        # Create user with auto-generated username and optional email
                         user = User.objects.create_user(
-                            username=row['Username'],
-                            email=row['Email'],
-                            first_name=row['First Name'],
-                            last_name=row['Last Name'],
+                            username=username,
+                            email='',  # Empty email as it's now optional
+                            first_name=first_name,
+                            last_name=last_name,
                             is_staff=False
                         )
                         
@@ -1701,7 +1792,7 @@ def import_professors(request):
                         imported_count += 1
                         
                     except Exception as e:
-                        errors.append(f"Row {index + 2}: {str(e)}")
+                        errors.append(f"Row {row_num}: {str(e)}")
             
             if imported_count > 0:
                 messages.success(request, f"Successfully imported {imported_count} professors.")
@@ -1735,7 +1826,7 @@ def import_students(request):
         
         try:
             df = pd.read_excel(file)
-            required_columns = ['First Name', 'Last Name', 'Email', 'Username', 'Roll Number', 'Division', 'Year']
+            required_columns = ['First Name', 'Last Name', 'Email', 'Username', 'Roll Number', 'Division', 'Semester', 'Department']
             
             # Check if all required columns exist
             missing_columns = [col for col in required_columns if col not in df.columns]
@@ -1747,26 +1838,31 @@ def import_students(request):
             errors = []
             
             with transaction.atomic():
-                for index, row in df.iterrows():
+                for row_idx, (index, row) in enumerate(df.iterrows()):
+                    row_num = row_idx + 2  # Add 2 for Excel row number (1-indexed + header)
                     try:
                         # Check if user already exists
                         if User.objects.filter(username=row['Username']).exists():
-                            errors.append(f"Row {index + 2}: Username '{row['Username']}' already exists")
+                            errors.append(f"Row {row_num}: Username '{row['Username']}' already exists")
                             continue
                         
                         if User.objects.filter(email=row['Email']).exists():
-                            errors.append(f"Row {index + 2}: Email '{row['Email']}' already exists")
+                            errors.append(f"Row {row_num}: Email '{row['Email']}' already exists")
                             continue
                         
                         if Student.objects.filter(roll_number=row['Roll Number']).exists():
-                            errors.append(f"Row {index + 2}: Roll Number '{row['Roll Number']}' already exists")
+                            errors.append(f"Row {row_num}: Roll Number '{row['Roll Number']}' already exists")
                             continue
+                        
+                        # Get semester and calculate year
+                        semester = int(row['Semester'])
+                        calculated_year = ((semester - 1) // 2) + 1
                         
                         # Get or create division
                         try:
-                            division = Division.objects.get(name=row['Division'], year=int(row['Year']))
+                            division = Division.objects.get(name=row['Division'], year=calculated_year)
                         except Division.DoesNotExist:
-                            errors.append(f"Row {index + 2}: Division '{row['Division']}' for year {row['Year']} does not exist")
+                            errors.append(f"Row {row_num}: Division '{row['Division']}' for calculated year {calculated_year} (from semester {semester}) does not exist")
                             continue
                         
                         # Get practical batch if specified
@@ -1775,7 +1871,7 @@ def import_students(request):
                             try:
                                 practical_batch = PracticalBatch.objects.get(name=row['Practical Batch'], division=division)
                             except PracticalBatch.DoesNotExist:
-                                errors.append(f"Row {index + 2}: Practical Batch '{row['Practical Batch']}' does not exist for division {division}")
+                                errors.append(f"Row {row_num}: Practical Batch '{row['Practical Batch']}' does not exist for division {division}")
                                 continue
                         
                         # Create user
@@ -1792,13 +1888,15 @@ def import_students(request):
                             user=user,
                             roll_number=row['Roll Number'],
                             division=division,
-                            practical_batch=practical_batch
+                            practical_batch=practical_batch,
+                            semester=semester,
+                            department=row['Department'] if 'Department' in row and pd.notna(row['Department']) else 'Computer Engineering'
                         )
                         
                         imported_count += 1
                         
                     except Exception as e:
-                        errors.append(f"Row {index + 2}: {str(e)}")
+                        errors.append(f"Row {row_num}: {str(e)}")
             
             if imported_count > 0:
                 messages.success(request, f"Successfully imported {imported_count} students.")
@@ -1832,7 +1930,7 @@ def import_subjects(request):
         
         try:
             df = pd.read_excel(file)
-            required_columns = ['Subject Name', 'Subject Code', 'Subject Type', 'Year', 'Semester']
+            required_columns = ['Subject Name', 'Subject Code', 'Subject Type', 'Semester']
             
             # Check if all required columns exist
             missing_columns = [col for col in required_columns if col not in df.columns]
@@ -1845,31 +1943,35 @@ def import_subjects(request):
             valid_types = ['theory', 'practical', 'tutorials']
             
             with transaction.atomic():
-                for index, row in df.iterrows():
+                for row_idx, (index, row) in enumerate(df.iterrows()):
+                    row_num = row_idx + 2  # Add 2 for Excel row number (1-indexed + header)
                     try:
                         # Validate subject type
                         if row['Subject Type'].lower() not in valid_types:
-                            errors.append(f"Row {index + 2}: Invalid subject type '{row['Subject Type']}'. Must be one of: {', '.join(valid_types)}")
+                            errors.append(f"Row {row_num}: Invalid subject type '{row['Subject Type']}'. Must be one of: {', '.join(valid_types)}")
                             continue
                         
                         # Check if subject code already exists
                         if Subject.objects.filter(code=row['Subject Code']).exists():
-                            errors.append(f"Row {index + 2}: Subject Code '{row['Subject Code']}' already exists")
+                            errors.append(f"Row {row_num}: Subject Code '{row['Subject Code']}' already exists")
                             continue
+                        
+                        # Get semester and calculate year
+                        semester = int(row['Semester'])
+                        calculated_year = ((semester - 1) // 2) + 1
                         
                         # Create subject
                         Subject.objects.create(
                             name=row['Subject Name'],
                             code=row['Subject Code'],
                             subject_type=row['Subject Type'].lower(),
-                            year=int(row['Year']),
-                            semester=int(row['Semester'])
+                            semester=semester
                         )
                         
                         imported_count += 1
                         
                     except Exception as e:
-                        errors.append(f"Row {index + 2}: {str(e)}")
+                        errors.append(f"Row {row_num}: {str(e)}")
             
             if imported_count > 0:
                 messages.success(request, f"Successfully imported {imported_count} subjects.")
@@ -1903,7 +2005,7 @@ def import_assignments(request):
         
         try:
             df = pd.read_excel(file)
-            required_columns = ['Professor Employee ID', 'Subject Code', 'Division Name', 'Division Year', 'Batch Name']
+            required_columns = ['Professor Employee ID', 'Subject Code', 'Division Name', 'Batch Name', 'Semester']
             
             # Check if all required columns exist
             missing_columns = [col for col in required_columns if col not in df.columns]
@@ -1915,58 +2017,157 @@ def import_assignments(request):
             errors = []
             
             with transaction.atomic():
-                for index, row in df.iterrows():
+                for row_idx, (index, row) in enumerate(df.iterrows()):
+                    row_num = row_idx + 2  # Add 2 for Excel row number (1-indexed + header)
                     try:
                         # Get professor
                         try:
                             professor = Professor.objects.get(employee_id=row['Professor Employee ID'])
                         except Professor.DoesNotExist:
-                            errors.append(f"Row {index + 2}: Professor with Employee ID '{row['Professor Employee ID']}' does not exist")
+                            errors.append(f"Row {row_num}: Professor with Employee ID '{row['Professor Employee ID']}' does not exist")
                             continue
                         
                         # Get subject
                         try:
                             subject = Subject.objects.get(code=row['Subject Code'])
                             if subject.subject_type not in ['practical', 'tutorials']:
-                                errors.append(f"Row {index + 2}: Subject '{row['Subject Code']}' is not a practical or tutorial subject")
+                                errors.append(f"Row {row_num}: Subject '{row['Subject Code']}' is not a practical or tutorial subject")
                                 continue
                         except Subject.DoesNotExist:
-                            errors.append(f"Row {index + 2}: Subject with code '{row['Subject Code']}' does not exist")
+                            errors.append(f"Row {row_num}: Subject with code '{row['Subject Code']}' does not exist")
                             continue
+                        
+                        # Get semester and calculate year
+                        semester = int(row['Semester'])
+                        calculated_year = ((semester - 1) // 2) + 1
                         
                         # Get division
                         try:
-                            division = Division.objects.get(name=row['Division Name'], year=int(row['Division Year']))
+                            division = Division.objects.get(name=row['Division Name'], year=calculated_year)
                         except Division.DoesNotExist:
-                            errors.append(f"Row {index + 2}: Division '{row['Division Name']}' for year {row['Division Year']} does not exist")
+                            errors.append(f"Row {row_num}: Division '{row['Division Name']}' for calculated year {calculated_year} (from semester {semester}) does not exist")
                             continue
                         
                         # Get batch
                         try:
                             batch = PracticalBatch.objects.get(name=row['Batch Name'], division=division)
                         except PracticalBatch.DoesNotExist:
-                            errors.append(f"Row {index + 2}: Batch '{row['Batch Name']}' does not exist for division {division}")
+                            errors.append(f"Row {row_num}: Batch '{row['Batch Name']}' does not exist for division {division}")
                             continue
                         
                         # Check if assignment already exists
-                        if PracticalAssignment.objects.filter(professor=professor, subject=subject, batch=batch).exists():
-                            errors.append(f"Row {index + 2}: Assignment already exists for {professor.employee_id} - {subject.code} - {batch.name}")
+                        if PracticalAssignment.objects.filter(professor=professor, subject=subject, batch=batch, semester=semester).exists():
+                            errors.append(f"Row {row_num}: Assignment already exists for {professor.employee_id} - {subject.code} - {batch.name} - Sem {semester}")
                             continue
                         
                         # Create assignment
                         PracticalAssignment.objects.create(
                             professor=professor,
                             subject=subject,
-                            batch=batch
+                            batch=batch,
+                            semester=semester
                         )
                         
                         imported_count += 1
                         
                     except Exception as e:
-                        errors.append(f"Row {index + 2}: {str(e)}")
+                        errors.append(f"Row {row_num}: {str(e)}")
             
             if imported_count > 0:
                 messages.success(request, f"Successfully imported {imported_count} professor-batch assignments.")
+            
+            if errors:
+                error_msg = "Errors encountered:\n" + "\n".join(errors[:10])
+                if len(errors) > 10:
+                    error_msg += f"\n... and {len(errors) - 10} more errors."
+                messages.error(request, error_msg)
+            
+        except Exception as e:
+            messages.error(request, f"Error processing file: {str(e)}")
+    
+    return redirect('import_data')
+
+
+@login_required
+@user_passes_test(is_admin)
+def import_theory_assignments(request):
+    """Import theory professor-division assignments from Excel file"""
+    if request.method == 'POST':
+        if 'excel_file' not in request.FILES:
+            messages.error(request, "Please select an Excel file to upload.")
+            return redirect('import_data')
+        
+        file = request.FILES['excel_file']
+        
+        if not file.name.endswith(('.xlsx', '.xls')):
+            messages.error(request, "Please upload a valid Excel file (.xlsx or .xls).")
+            return redirect('import_data')
+        
+        try:
+            df = pd.read_excel(file)
+            required_columns = ['Professor Employee ID', 'Subject Code', 'Division Name', 'Semester']
+            
+            # Check if all required columns exist
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                messages.error(request, f"Missing required columns: {', '.join(missing_columns)}")
+                return redirect('import_data')
+            
+            imported_count = 0
+            errors = []
+            
+            with transaction.atomic():
+                for row_idx, (index, row) in enumerate(df.iterrows()):
+                    row_num = row_idx + 2  # Add 2 for Excel row number (1-indexed + header)
+                    try:
+                        # Get professor
+                        try:
+                            professor = Professor.objects.get(employee_id=row['Professor Employee ID'])
+                        except Professor.DoesNotExist:
+                            errors.append(f"Row {row_num}: Professor with Employee ID '{row['Professor Employee ID']}' does not exist")
+                            continue
+                        
+                        # Get subject
+                        try:
+                            subject = Subject.objects.get(code=row['Subject Code'])
+                            if subject.subject_type != 'theory':
+                                errors.append(f"Row {row_num}: Subject '{row['Subject Code']}' is not a theory subject")
+                                continue
+                        except Subject.DoesNotExist:
+                            errors.append(f"Row {row_num}: Subject with code '{row['Subject Code']}' does not exist")
+                            continue
+                        
+                        # Get semester and calculate year
+                        semester = int(row['Semester'])
+                        calculated_year = ((semester - 1) // 2) + 1
+                        
+                        # Get division
+                        try:
+                            division = Division.objects.get(name=row['Division Name'], year=calculated_year)
+                        except Division.DoesNotExist:
+                            errors.append(f"Row {row_num}: Division '{row['Division Name']}' for calculated year {calculated_year} (from semester {semester}) does not exist")
+                            continue
+                        
+                        # Check if assignment already exists
+                        if TeacherAssignment.objects.filter(professor=professor, subject=subject, division=division, semester=semester).exists():
+                            errors.append(f"Row {row_num}: Assignment already exists for {professor.employee_id} - {subject.code} - {division} - Sem {semester}")
+                            continue
+                        
+                        # Create assignment
+                        TeacherAssignment.objects.create(
+                            professor=professor,
+                            subject=subject,
+                            division=division,
+                            semester=semester
+                        )
+                        
+                        imported_count += 1
+                        
+                    except Exception as e:
+                        errors.append(f"Row {row_num}: {str(e)}")
+            
+            if imported_count > 0:
+                messages.success(request, f"Successfully imported {imported_count} theory professor-division assignments.")
             
             if errors:
                 error_msg = "Errors encountered:\n" + "\n".join(errors[:10])
