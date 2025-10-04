@@ -26,6 +26,26 @@ class ProfessorAdmin(admin.ModelAdmin):
     def get_username(self, obj):
         return obj.user.username
     get_username.short_description = 'Username'
+    
+    def delete_model(self, request, obj):
+        """Override delete to also remove the associated User"""
+        user = obj.user
+        super().delete_model(request, obj)
+        # Delete the associated user after the professor is deleted
+        if user:
+            user.delete()
+    
+    def delete_queryset(self, request, queryset):
+        """Override bulk delete to also remove associated Users"""
+        # Get all users before deleting professors
+        users_to_delete = [professor.user for professor in queryset if professor.user]
+        super().delete_queryset(request, queryset)
+        # Delete the associated users after professors are deleted
+        for user in users_to_delete:
+            try:
+                user.delete()
+            except Exception:
+                pass  # User might have been deleted already
 
 
 @admin.register(Subject)
@@ -64,6 +84,26 @@ class StudentAdmin(admin.ModelAdmin):
     def get_year(self, obj):
         return obj.year
     get_year.short_description = 'Year'
+    
+    def delete_model(self, request, obj):
+        """Override delete to also remove the associated User"""
+        user = obj.user
+        super().delete_model(request, obj)
+        # Delete the associated user after the student is deleted
+        if user:
+            user.delete()
+    
+    def delete_queryset(self, request, queryset):
+        """Override bulk delete to also remove associated Users"""
+        # Get all users before deleting students
+        users_to_delete = [student.user for student in queryset if student.user]
+        super().delete_queryset(request, queryset)
+        # Delete the associated users after students are deleted
+        for user in users_to_delete:
+            try:
+                user.delete()
+            except Exception:
+                pass  # User might have been deleted already
 
 
 @admin.register(TeacherAssignment)

@@ -28,38 +28,38 @@ class Command(BaseCommand):
         # Create some default subjects
         subjects_data = [
             # Year 1 subjects
-            {'name': 'Engineering Mathematics I', 'code': 'EM1', 'type': 'theory', 'year': 1, 'semester': 1},
-            {'name': 'Engineering Physics', 'code': 'EP', 'type': 'theory', 'year': 1, 'semester': 1},
-            {'name': 'Engineering Chemistry', 'code': 'EC', 'type': 'theory', 'year': 1, 'semester': 1},
-            {'name': 'Basic Electronics Engineering', 'code': 'BEE', 'type': 'theory', 'year': 1, 'semester': 1},
-            {'name': 'Physics Lab', 'code': 'PL', 'type': 'practical', 'year': 1, 'semester': 1},
-            {'name': 'Chemistry Lab', 'code': 'CL', 'type': 'practical', 'year': 1, 'semester': 1},
-            {'name': 'Programming Lab', 'code': 'PROG', 'type': 'practical', 'year': 1, 'semester': 1},
+            # {'name': 'Engineering Mathematics I', 'code': 'EM1', 'type': 'theory', 'year': 1, 'semester': 1},
+            # {'name': 'Engineering Physics', 'code': 'EP', 'type': 'theory', 'year': 1, 'semester': 1},
+            # {'name': 'Engineering Chemistry', 'code': 'EC', 'type': 'theory', 'year': 1, 'semester': 1},
+            # {'name': 'Basic Electronics Engineering', 'code': 'BEE', 'type': 'theory', 'year': 1, 'semester': 1},
+            # {'name': 'Physics Lab', 'code': 'PL', 'type': 'practical', 'year': 1, 'semester': 1},
+            # {'name': 'Chemistry Lab', 'code': 'CL', 'type': 'practical', 'year': 1, 'semester': 1},
+            # {'name': 'Programming Lab', 'code': 'PROG', 'type': 'practical', 'year': 1, 'semester': 1},
             
-            # Year 2 subjects
-            {'name': 'Data Structures', 'code': 'DS', 'type': 'theory', 'year': 2, 'semester': 3},
-            {'name': 'Computer Networks', 'code': 'CN', 'type': 'theory', 'year': 2, 'semester': 3},
-            {'name': 'Database Management Systems', 'code': 'DBMS', 'type': 'theory', 'year': 2, 'semester': 3},
-            {'name': 'Data Structures Lab', 'code': 'DSL', 'type': 'practical', 'year': 2, 'semester': 3},
-            {'name': 'DBMS Lab', 'code': 'DBMSL', 'type': 'practical', 'year': 2, 'semester': 3},
+            # # Year 2 subjects
+            # {'name': 'Data Structures', 'code': 'DS', 'type': 'theory', 'year': 2, 'semester': 3},
+            # {'name': 'Computer Networks', 'code': 'CN', 'type': 'theory', 'year': 2, 'semester': 3},
+            # {'name': 'Database Management Systems', 'code': 'DBMS', 'type': 'theory', 'year': 2, 'semester': 3},
+            # {'name': 'Data Structures Lab', 'code': 'DSL', 'type': 'practical', 'year': 2, 'semester': 3},
+            # {'name': 'DBMS Lab', 'code': 'DBMSL', 'type': 'practical', 'year': 2, 'semester': 3},
             
-            # Year 3 subjects
-            {'name': 'Software Engineering', 'code': 'SE', 'type': 'theory', 'year': 3, 'semester': 5},
-            {'name': 'Web Technology', 'code': 'WT', 'type': 'theory', 'year': 3, 'semester': 5},
-            {'name': 'Machine Learning', 'code': 'ML', 'type': 'theory', 'year': 3, 'semester': 5},
-            {'name': 'Web Technology Lab', 'code': 'WTL', 'type': 'practical', 'year': 3, 'semester': 5},
-            {'name': 'ML Lab', 'code': 'MLL', 'type': 'practical', 'year': 3, 'semester': 5},
+            # # Year 3 subjects
+            # {'name': 'Software Engineering', 'code': 'SE', 'type': 'theory', 'year': 3, 'semester': 5},
+            # {'name': 'Web Technology', 'code': 'WT', 'type': 'theory', 'year': 3, 'semester': 5},
+            # {'name': 'Machine Learning', 'code': 'ML', 'type': 'theory', 'year': 3, 'semester': 5},
+            # {'name': 'Web Technology Lab', 'code': 'WTL', 'type': 'practical', 'year': 3, 'semester': 5},
+            # {'name': 'ML Lab', 'code': 'MLL', 'type': 'practical', 'year': 3, 'semester': 5},
             
-            # Year 4 subjects
-            {'name': 'Distributed Systems', 'code': 'DIST', 'type': 'theory', 'year': 4, 'semester': 7},
-            {'name': 'Cloud Computing', 'code': 'CC', 'type': 'theory', 'year': 4, 'semester': 7},
-            {'name': 'Project Lab', 'code': 'PROJ', 'type': 'practical', 'year': 4, 'semester': 7},
+            # # Year 4 subjects
+            # {'name': 'Distributed Systems', 'code': 'DIST', 'type': 'theory', 'year': 4, 'semester': 7},
+            # {'name': 'Cloud Computing', 'code': 'CC', 'type': 'theory', 'year': 4, 'semester': 7},
+            # {'name': 'Project Lab', 'code': 'PROJ', 'type': 'practical', 'year': 4, 'semester': 7},
             
-            # Tutorial subjects for all years
-            {'name': 'Soft Skills Development', 'code': 'SSD', 'type': 'tutorials', 'year': 1, 'semester': 1},
-            {'name': 'Professional Ethics', 'code': 'PE', 'type': 'tutorials', 'year': 2, 'semester': 3},
-            {'name': 'Communication Skills', 'code': 'CS', 'type': 'tutorials', 'year': 3, 'semester': 5},
-            {'name': 'Industry Readiness', 'code': 'IR', 'type': 'tutorials', 'year': 4, 'semester': 7},
+            # # Tutorial subjects for all years
+            # {'name': 'Soft Skills Development', 'code': 'SSD', 'type': 'tutorials', 'year': 1, 'semester': 1},
+            # {'name': 'Professional Ethics', 'code': 'PE', 'type': 'tutorials', 'year': 2, 'semester': 3},
+            # {'name': 'Communication Skills', 'code': 'CS', 'type': 'tutorials', 'year': 3, 'semester': 5},
+            # {'name': 'Industry Readiness', 'code': 'IR', 'type': 'tutorials', 'year': 4, 'semester': 7},
         ]
         
         subjects_created = 0
@@ -81,14 +81,14 @@ class Command(BaseCommand):
         
         # Create some default professors
         professors_data = [
-            {'first_name': 'Dr. Rajesh', 'last_name': 'Kumar', 'email': 'rajesh.kumar@kjsit.edu.in', 'emp_id': 'EMP001', 'dept': 'Computer Engineering'},
-            {'first_name': 'Prof. Priya', 'last_name': 'Sharma', 'email': 'priya.sharma@kjsit.edu.in', 'emp_id': 'EMP002', 'dept': 'Computer Engineering'},
-            {'first_name': 'Dr. Amit', 'last_name': 'Patel', 'email': 'amit.patel@kjsit.edu.in', 'emp_id': 'EMP003', 'dept': 'Information Technology'},
-            {'first_name': 'Prof. Sunita', 'last_name': 'Joshi', 'email': 'sunita.joshi@kjsit.edu.in', 'emp_id': 'EMP004', 'dept': 'Computer Engineering'},
-            {'first_name': 'Dr. Vikram', 'last_name': 'Singh', 'email': 'vikram.singh@kjsit.edu.in', 'emp_id': 'EMP005', 'dept': 'Information Technology'},
-            {'first_name': 'Prof. Kavita', 'last_name': 'Mehta', 'email': 'kavita.mehta@kjsit.edu.in', 'emp_id': 'EMP006', 'dept': 'Computer Engineering'},
-            {'first_name': 'Dr. Sandeep', 'last_name': 'Gupta', 'email': 'sandeep.gupta@kjsit.edu.in', 'emp_id': 'EMP007', 'dept': 'Electronics Engineering'},
-            {'first_name': 'Prof. Neha', 'last_name': 'Agarwal', 'email': 'neha.agarwal@kjsit.edu.in', 'emp_id': 'EMP008', 'dept': 'Computer Engineering'},
+            # {'first_name': 'Dr. Rajesh', 'last_name': 'Kumar', 'email': 'rajesh.kumar@kjsit.edu.in', 'emp_id': 'EMP001', 'dept': 'Computer Engineering'},
+            # {'first_name': 'Prof. Priya', 'last_name': 'Sharma', 'email': 'priya.sharma@kjsit.edu.in', 'emp_id': 'EMP002', 'dept': 'Computer Engineering'},
+            # {'first_name': 'Dr. Amit', 'last_name': 'Patel', 'email': 'amit.patel@kjsit.edu.in', 'emp_id': 'EMP003', 'dept': 'Information Technology'},
+            # {'first_name': 'Prof. Sunita', 'last_name': 'Joshi', 'email': 'sunita.joshi@kjsit.edu.in', 'emp_id': 'EMP004', 'dept': 'Computer Engineering'},
+            # {'first_name': 'Dr. Vikram', 'last_name': 'Singh', 'email': 'vikram.singh@kjsit.edu.in', 'emp_id': 'EMP005', 'dept': 'Information Technology'},
+            # {'first_name': 'Prof. Kavita', 'last_name': 'Mehta', 'email': 'kavita.mehta@kjsit.edu.in', 'emp_id': 'EMP006', 'dept': 'Computer Engineering'},
+            # {'first_name': 'Dr. Sandeep', 'last_name': 'Gupta', 'email': 'sandeep.gupta@kjsit.edu.in', 'emp_id': 'EMP007', 'dept': 'Electronics Engineering'},
+            # {'first_name': 'Prof. Neha', 'last_name': 'Agarwal', 'email': 'neha.agarwal@kjsit.edu.in', 'emp_id': 'EMP008', 'dept': 'Computer Engineering'},
         ]
         
         professors_created = 0
