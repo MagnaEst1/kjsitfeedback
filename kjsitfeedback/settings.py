@@ -159,12 +159,12 @@ ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'none'  
 LOGIN_URI = '/accounts/login/'
 # Where to redirect after successful login
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/dashboard'
 
 # Where to redirect after logout
 LOGOUT_REDIRECT_URL = '/'
 SITE_ID = 1
-SOCIALACCOUNT_ONLY = True
+SOCIALACCOUNT_ONLY = False
 ACCOUNT_LOGOUT_ON_GET = True
 SOCIALACCOUNT_LOGIN_ON_GET=True
 ALLAUTH_UI_THEME = "dark"

@@ -682,24 +682,36 @@ def get_subjects_by_type(request):
     # Base query for subjects of the specified type
     subjects_query = Subject.objects.filter(subject_type=subject_type)
     
-    # For practical and tutorial subjects, filter by assignments to specific batches
-    if subject_type in ['practical', 'tutorials'] and division_id and practical_batch_id:
-        # Get subjects that have practical assignments for this batch
-        assigned_subjects = PracticalAssignment.objects.filter(
-            batch_id=practical_batch_id
-        ).values_list('subject_id', flat=True)
-        subjects_query = subjects_query.filter(id__in=assigned_subjects)
+    # If division_id is provided, filter subjects by the calculated year that matches the division's year
+    if division_id:
+        try:
+            division = Division.objects.get(id=division_id)
+            division_year = division.year
+            
+            # Filter subjects where the calculated year matches the division's year
+            # Get all subjects for this subject type first
+            all_subjects = subjects_query.all()
+            matching_subjects = []
+            
+            for subject in all_subjects:
+                calculated_year = ((subject.semester - 1) // 2) + 1
+                if calculated_year == division_year:
+                    matching_subjects.append(subject.pk)
+            
+            subjects_query = subjects_query.filter(id__in=matching_subjects)
+            
+        except Division.DoesNotExist:
+            pass  # If division doesn't exist, show all subjects of the type
     
-    # For theory subjects, filter by teacher assignments to the division
-    elif subject_type == 'theory' and division_id:
-        # Get subjects that have teacher assignments for this division
-        assigned_subjects = TeacherAssignment.objects.filter(
-            division_id=division_id
-        ).values_list('subject_id', flat=True)
-        subjects_query = subjects_query.filter(id__in=assigned_subjects)
+    subjects = subjects_query.values('id', 'code', 'name', 'semester').order_by('semester', 'code')
     
-    subjects = subjects_query.values('id', 'code', 'name', 'year').order_by('year', 'code')
-    return JsonResponse({'subjects': list(subjects)})
+    # Add calculated year to each subject
+    subjects_list = []
+    for subject in subjects:
+        subject['year'] = ((subject['semester'] - 1) // 2) + 1
+        subjects_list.append(subject)
+    
+    return JsonResponse({'subjects': subjects_list})
 
 
 @login_required
@@ -716,52 +728,9 @@ def get_professors_by_subject_division(request):
     try:
         subject = Subject.objects.get(id=subject_id)
         
-        if subject.subject_type in ['practical', 'tutorials'] and practical_batch_id:
-            # For practical and tutorial subjects, get professors who:
-            # 1. Are assigned to this specific subject and batch
-            # 2. Are not already assigned to any other batch for practical/tutorial subjects
-            assigned_professors = PracticalAssignment.objects.filter(
-                subject=subject,
-                batch_id=practical_batch_id
-            ).values_list('professor_id', flat=True)
-            
-            # Get professors who are not assigned to other batches for practical/tutorial subjects
-            professors_with_other_batches = PracticalAssignment.objects.exclude(
-                subject=subject,
-                batch_id=practical_batch_id
-            ).filter(
-                subject__subject_type__in=['practical', 'tutorials']
-            ).values_list('professor_id', flat=True)
-            
-            # Only include professors assigned to this batch and not assigned to other batches
-            available_professor_ids = [pid for pid in assigned_professors if pid not in professors_with_other_batches]
-            
-            professors = Professor.objects.filter(
-                id__in=available_professor_ids
-            ).values('id', 'user__first_name', 'user__last_name', 'employee_id')
-        else:
-            # For theory subjects, get professors who:
-            # 1. Are assigned to this specific subject and division
-            # 2. Are not already assigned to any other division for theory subjects
-            assigned_professors = TeacherAssignment.objects.filter(
-                subject=subject,
-                division_id=division_id
-            ).values_list('professor_id', flat=True)
-            
-            # Get professors who are assigned to other divisions for theory subjects
-            professors_with_other_divisions = TeacherAssignment.objects.exclude(
-                subject=subject,
-                division_id=division_id
-            ).filter(
-                subject__subject_type='theory'
-            ).values_list('professor_id', flat=True)
-            
-            # Only include professors assigned to this division and not assigned to other divisions
-            available_professor_ids = [pid for pid in assigned_professors if pid not in professors_with_other_divisions]
-            
-            professors = Professor.objects.filter(
-                id__in=available_professor_ids
-            ).values('id', 'user__first_name', 'user__last_name', 'employee_id')
+        # Get all professors - for form creation, we want to show all available professors
+        # The user can choose which professor to create a feedback form for
+        professors = Professor.objects.all().values('id', 'user__first_name', 'user__last_name', 'employee_id')
         
         # Format professor names
         professor_list = []
@@ -1750,6 +1719,7 @@ def import_professors(request):
                 return redirect('import_data')
             
             imported_count = 0
+            skipped_count = 0
             errors = []
             
             with transaction.atomic():
@@ -1768,9 +1738,10 @@ def import_professors(request):
                             username = f"{base_username}{counter}"
                             counter += 1
                         
-                        # Check if employee ID already exists
+                        # Check if employee ID already exists - skip instead of error
                         if Professor.objects.filter(employee_id=row['Employee ID']).exists():
-                            errors.append(f"Row {row_num}: Employee ID '{row['Employee ID']}' already exists")
+                            #errors.append(f"Row {row_num}: Employee ID '{row['Employee ID']}' already exists")
+                            skipped_count += 1
                             continue
                         
                         # Create user with auto-generated username and optional email
@@ -1794,8 +1765,12 @@ def import_professors(request):
                     except Exception as e:
                         errors.append(f"Row {row_num}: {str(e)}")
             
+            # Show results
             if imported_count > 0:
                 messages.success(request, f"Successfully imported {imported_count} professors.")
+            
+            if skipped_count > 0:
+                messages.info(request, f"Skipped {skipped_count} professors (already exist).")
             
             if errors:
                 error_msg = "Errors encountered:\n" + "\n".join(errors[:10])
@@ -1835,23 +1810,24 @@ def import_students(request):
                 return redirect('import_data')
             
             imported_count = 0
+            skipped_count = 0
             errors = []
             
             with transaction.atomic():
                 for row_idx, (index, row) in enumerate(df.iterrows()):
                     row_num = row_idx + 2  # Add 2 for Excel row number (1-indexed + header)
                     try:
-                        # Check if user already exists
+                        # Check if user already exists - skip instead of error
                         if User.objects.filter(username=row['Username']).exists():
-                            errors.append(f"Row {row_num}: Username '{row['Username']}' already exists")
+                            skipped_count += 1
                             continue
                         
                         if User.objects.filter(email=row['Email']).exists():
-                            errors.append(f"Row {row_num}: Email '{row['Email']}' already exists")
+                            skipped_count += 1
                             continue
                         
                         if Student.objects.filter(roll_number=row['Roll Number']).exists():
-                            errors.append(f"Row {row_num}: Roll Number '{row['Roll Number']}' already exists")
+                            skipped_count += 1
                             continue
                         
                         # Get semester and calculate year
@@ -1898,8 +1874,12 @@ def import_students(request):
                     except Exception as e:
                         errors.append(f"Row {row_num}: {str(e)}")
             
+            # Show results
             if imported_count > 0:
                 messages.success(request, f"Successfully imported {imported_count} students.")
+            
+            if skipped_count > 0:
+                messages.info(request, f"Skipped {skipped_count} students (already exist).")
             
             if errors:
                 error_msg = "Errors encountered:\n" + "\n".join(errors[:10])
@@ -1939,6 +1919,7 @@ def import_subjects(request):
                 return redirect('import_data')
             
             imported_count = 0
+            skipped_count = 0
             errors = []
             valid_types = ['theory', 'practical', 'tutorials']
             
@@ -1951,9 +1932,9 @@ def import_subjects(request):
                             errors.append(f"Row {row_num}: Invalid subject type '{row['Subject Type']}'. Must be one of: {', '.join(valid_types)}")
                             continue
                         
-                        # Check if subject code already exists
+                        # Check if subject code already exists - skip instead of error
                         if Subject.objects.filter(code=row['Subject Code']).exists():
-                            errors.append(f"Row {row_num}: Subject Code '{row['Subject Code']}' already exists")
+                            skipped_count += 1
                             continue
                         
                         # Get semester and calculate year
@@ -1973,8 +1954,12 @@ def import_subjects(request):
                     except Exception as e:
                         errors.append(f"Row {row_num}: {str(e)}")
             
+            # Show results
             if imported_count > 0:
                 messages.success(request, f"Successfully imported {imported_count} subjects.")
+            
+            if skipped_count > 0:
+                messages.info(request, f"Skipped {skipped_count} subjects (already exist).")
             
             if errors:
                 error_msg = "Errors encountered:\n" + "\n".join(errors[:10])
@@ -2014,6 +1999,7 @@ def import_assignments(request):
                 return redirect('import_data')
             
             imported_count = 0
+            skipped_count = 0
             errors = []
             
             with transaction.atomic():
@@ -2055,9 +2041,9 @@ def import_assignments(request):
                             errors.append(f"Row {row_num}: Batch '{row['Batch Name']}' does not exist for division {division}")
                             continue
                         
-                        # Check if assignment already exists
+                        # Check if assignment already exists - skip instead of error
                         if PracticalAssignment.objects.filter(professor=professor, subject=subject, batch=batch, semester=semester).exists():
-                            errors.append(f"Row {row_num}: Assignment already exists for {professor.employee_id} - {subject.code} - {batch.name} - Sem {semester}")
+                            skipped_count += 1
                             continue
                         
                         # Create assignment
@@ -2073,8 +2059,12 @@ def import_assignments(request):
                     except Exception as e:
                         errors.append(f"Row {row_num}: {str(e)}")
             
+            # Show results
             if imported_count > 0:
                 messages.success(request, f"Successfully imported {imported_count} professor-batch assignments.")
+            
+            if skipped_count > 0:
+                messages.info(request, f"Skipped {skipped_count} assignments (already exist).")
             
             if errors:
                 error_msg = "Errors encountered:\n" + "\n".join(errors[:10])
@@ -2114,6 +2104,7 @@ def import_theory_assignments(request):
                 return redirect('import_data')
             
             imported_count = 0
+            skipped_count = 0
             errors = []
             
             with transaction.atomic():
@@ -2148,9 +2139,9 @@ def import_theory_assignments(request):
                             errors.append(f"Row {row_num}: Division '{row['Division Name']}' for calculated year {calculated_year} (from semester {semester}) does not exist")
                             continue
                         
-                        # Check if assignment already exists
+                        # Check if assignment already exists - skip instead of error
                         if TeacherAssignment.objects.filter(professor=professor, subject=subject, division=division, semester=semester).exists():
-                            errors.append(f"Row {row_num}: Assignment already exists for {professor.employee_id} - {subject.code} - {division} - Sem {semester}")
+                            skipped_count += 1
                             continue
                         
                         # Create assignment
@@ -2166,8 +2157,12 @@ def import_theory_assignments(request):
                     except Exception as e:
                         errors.append(f"Row {row_num}: {str(e)}")
             
+            # Show results
             if imported_count > 0:
                 messages.success(request, f"Successfully imported {imported_count} theory professor-division assignments.")
+            
+            if skipped_count > 0:
+                messages.info(request, f"Skipped {skipped_count} theory assignments (already exist).")
             
             if errors:
                 error_msg = "Errors encountered:\n" + "\n".join(errors[:10])
