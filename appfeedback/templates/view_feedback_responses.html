@@ -27,7 +27,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
-                    <span>Export CSV</span>
+                    <span>Export XLSX</span>
                 </a>
                 
                 <a href="{% url 'manage_feedback_forms' %}" 
@@ -41,7 +41,7 @@
         </div>
     </div>
     <!-- Quick Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-lg shadow border border-kjsit-red/20 p-4">
             <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 bg-kjsit-red rounded-lg flex items-center justify-center">
@@ -52,6 +52,21 @@
                 <div>
                     <h3 class="text-sm font-medium text-gray-700">Total Responses</h3>
                     <p class="text-2xl font-bold text-kjsit-red">{{ total_responses }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow border border-kjsit-red/20 p-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-700">Response Rate</h3>
+                    <p class="text-2xl font-bold text-green-600">{{ response_rate|floatformat:1 }}%</p>
+                    <p class="text-xs text-gray-500">{{ total_responses }}/{{ eligible_students_count }}</p>
                 </div>
             </div>
         </div>
@@ -72,20 +87,105 @@
         
         <div class="bg-white rounded-lg shadow border border-kjsit-red/20 p-4">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                <div class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-sm font-medium text-gray-700">Status</h3>
-                    <p class="text-lg font-semibold {% if form.is_active %}text-green-600{% else %}text-red-600{% endif %}">
-                        {% if form.is_active %}Active{% else %}Inactive{% endif %}
-                    </p>
+                    <h3 class="text-sm font-medium text-gray-700">Pending</h3>
+                    <p class="text-2xl font-bold text-orange-600">{{ pending_students_count }}</p>
+                    <p class="text-xs text-gray-500">Students not responded</p>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Pending Students Section -->
+    {% if pending_students_count > 0 %}
+    <div class="bg-white rounded-xl shadow-lg border border-orange-200 mb-6">
+        <button id="toggle-pending" class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-orange-50 transition-colors duration-200">
+            <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                </svg>
+                <h3 class="text-lg font-semibold text-orange-700">Students Who Haven't Responded</h3>
+                <span class="bg-orange-100 text-orange-800 text-sm font-medium px-2 py-1 rounded-full">{{ pending_students_count }}</span>
+            </div>
+            <svg id="pending-chevron" class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </button>
+        
+        <div id="pending-content" class="hidden border-t border-orange-200 p-6">
+            <div class="mb-4 p-4 bg-orange-50 rounded-lg">
+                <h4 class="text-orange-800 font-medium mb-2">Feedback Form Details:</h4>
+                <div class="text-sm text-orange-700 space-y-1">
+                    <p><span class="font-medium">Subject:</span> {{ form.subject.code }} - {{ form.subject.name }}</p>
+                    <p><span class="font-medium">Division:</span> {{ form.division }}</p>
+                    {% if form.practical_batch %}
+                        <p><span class="font-medium">Batch:</span> {{ form.practical_batch.name }}</p>
+                    {% else %}
+                        <p><span class="font-medium">Type:</span> Theory (All students in division)</p>
+                    {% endif %}
+                    <p><span class="font-medium">Professor:</span> {{ form.professor.user.get_full_name }}</p>
+                </div>
+            </div>
+            
+            {% if pending_students %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Roll Number</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student Name</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Division</th>
+                            {% if form.practical_batch %}
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batch</th>
+                            {% endif %}
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for student in pending_students %}
+                            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                <td class="px-4 py-3 text-sm font-medium text-gray-900">
+                                    {{ student.roll_number }}
+                                </td>
+                                <td class="px-4 py-3 text-sm text-gray-900">
+                                    {{ student.user.get_full_name }}
+                                </td>
+                                <td class="px-4 py-3 text-sm text-gray-500">
+                                    {{ student.division }}
+                                </td>
+                                {% if form.practical_batch %}
+                                <td class="px-4 py-3 text-sm text-gray-500">
+                                    {{ student.practical_batch.name|default:"—" }}
+                                </td>
+                                {% endif %}
+                                <td class="px-4 py-3 text-sm text-gray-500">
+                                    {{ student.department }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                <p class="text-sm text-gray-600">
+                    <span class="font-medium">{{ pending_students_count }}</span> out of <span class="font-medium">{{ eligible_students_count }}</span> students haven't submitted their feedback yet.
+                    Response rate: <span class="font-medium text-green-600">{{ response_rate|floatformat:1 }}%</span>
+                </p>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <p class="text-gray-500">All eligible students have submitted their feedback!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
         
     <!-- Collapsible Search and Filter Controls -->
     <div class="bg-white rounded-xl shadow-lg border border-kjsit-red/20 mb-6">
@@ -432,6 +532,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const analysisContent = document.getElementById('analysis-content');
     const analysisChevron = document.getElementById('analysis-chevron');
     
+    const togglePending = document.getElementById('toggle-pending');
+    const pendingContent = document.getElementById('pending-content');
+    const pendingChevron = document.getElementById('pending-chevron');
+    
     if (toggleFilters && filterContent) {
         toggleFilters.addEventListener('click', function() {
             filterContent.classList.toggle('hidden');
@@ -443,6 +547,13 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleAnalysis.addEventListener('click', function() {
             analysisContent.classList.toggle('hidden');
             analysisChevron.classList.toggle('rotate-180');
+        });
+    }
+    
+    if (togglePending && pendingContent) {
+        togglePending.addEventListener('click', function() {
+            pendingContent.classList.toggle('hidden');
+            pendingChevron.classList.toggle('rotate-180');
         });
     }
     

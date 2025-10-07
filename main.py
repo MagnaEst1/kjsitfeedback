@@ -13,7 +13,7 @@ IS_WINDOWS = platform.system() == "Windows"
 # Commands
 BACKEND_COMMAND = ["uv", "run", DJANGO_MANAGE_PATH, "runserver"]
 FRONTEND_COMMAND = (
-    f'cmd.exe /c "cd {VITE_DIR} && npm run dev"' if IS_WINDOWS else ["npm", "run", "dev"]
+    f''
 )
 
 def stream_process(prefix, command, shell=False):
@@ -40,29 +40,12 @@ def run_backend():
     run_migrations()
     stream_process("BACKEND", BACKEND_COMMAND)
 
-def run_frontend():
-    print("Starting Vite frontend...")
-    shell = IS_WINDOWS
-    stream_process("FRONTEND", FRONTEND_COMMAND, shell=shell)
-
 def main():
     parser = argparse.ArgumentParser(description="Run frontend, backend, or both.")
-    parser.add_argument("--frontend", action="store_true", help="Run Vite frontend only")
-    parser.add_argument("--backend", action="store_true", help="Run Django backend only")
     args = parser.parse_args()
 
     threads = []
-    if args.frontend and args.backend:
-        threads.append(threading.Thread(target=run_backend))
-        threads.append(threading.Thread(target=run_frontend))
-    elif args.frontend:
-        threads.append(threading.Thread(target=run_frontend))
-    elif args.backend:
-        threads.append(threading.Thread(target=run_backend))
-    else:
-        print("No arguments provided. Running both frontend and backend by default...")
-        threads.append(threading.Thread(target=run_backend))
-        threads.append(threading.Thread(target=run_frontend))
+    threads.append(threading.Thread(target=run_backend))
 
     for t in threads:
         t.start()

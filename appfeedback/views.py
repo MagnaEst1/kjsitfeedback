@@ -16,6 +16,7 @@ import csv
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
+from openpyxl.chart import BarChart, PieChart, LineChart, Reference
 from io import BytesIO
 from .models import (
     Division, Professor, Subject, PracticalBatch, Student, 
@@ -611,8 +612,42 @@ def fill_feedback_form_view(request, form_id):
                             
                             answer.save()
                 
-                messages.success(request, "Feedback submitted successfully!")
-                return redirect('dashboard')
+                # Find next available form for this student
+                try:
+                    student = Student.objects.get(user=request.user)
+                    
+                    # Get all available forms for this student
+                    available_forms = FeedbackForm.objects.filter(
+                        is_active=True,
+                        division=student.division
+                    ).exclude(
+                        # Exclude forms where student has already submitted feedback
+                        id__in=FeedbackResponse.objects.filter(student=student).values_list('form_id', flat=True)
+                    )
+                    
+                    # Filter based on subject type
+                    next_form = None
+                    for form in available_forms:
+                        if form.subject.subject_type == 'theory':
+                            # Theory subjects - just check division
+                            next_form = form
+                            break
+                        elif form.subject.subject_type in ['practical', 'tutorials']:
+                            # Practical/tutorial subjects - check if student's batch matches
+                            if student.practical_batch and form.practical_batch == student.practical_batch:
+                                next_form = form
+                                break
+                    
+                    if next_form:
+                        messages.success(request, f"Feedback submitted successfully! Redirecting to next form: {next_form.title}")
+                        return redirect('fill_feedback_form', form_id=next_form.id)
+                    else:
+                        messages.success(request, "Feedback submitted successfully! All available forms completed.")
+                        return redirect('dashboard')
+                        
+                except Student.DoesNotExist:
+                    messages.success(request, "Feedback submitted successfully!")
+                    return redirect('dashboard')
                 
         except (ValidationError, ValueError) as e:
             messages.error(request, f"Error submitting feedback: {e}")
@@ -621,6 +656,50 @@ def fill_feedback_form_view(request, form_id):
         'form': feedback_form,
         'questions': questions,
     })
+
+
+@login_required
+def feedback_completed_view(request, form_id):
+    """View to show feedback completion and available next forms"""
+    try:
+        student = Student.objects.get(user=request.user)
+    except Student.DoesNotExist:
+        messages.error(request, "Student profile not found.")
+        return redirect('dashboard')
+    
+    completed_form = get_object_or_404(FeedbackForm, id=form_id)
+    
+    # Find available feedback forms for this student
+    # For theory subjects, match by division only
+    # For practical/tutorial subjects, match by division and practical_batch
+    available_forms = FeedbackForm.objects.filter(
+        is_active=True,
+        division=student.division
+    ).exclude(
+        # Exclude forms where student has already submitted feedback
+        id__in=FeedbackResponse.objects.filter(student=student).values_list('form_id', flat=True)
+    )
+    
+    # Further filter based on subject type
+    filtered_forms = []
+    for form in available_forms:
+        if form.subject.subject_type == 'theory':
+            # Theory subjects - just check division
+            filtered_forms.append(form)
+        elif form.subject.subject_type in ['practical', 'tutorials']:
+            # Practical/tutorial subjects - check if student's batch matches
+            if student.practical_batch and form.practical_batch == student.practical_batch:
+                filtered_forms.append(form)
+    
+    available_forms = sorted(filtered_forms, key=lambda x: x.title)
+    
+    context = {
+        'completed_form': completed_form,
+        'available_forms': available_forms,
+        'student': student,
+    }
+    
+    return render(request, 'feedback_completed.html', context)
 
 
 @login_required
@@ -913,6 +992,16 @@ def view_feedback_responses(request, form_id):
     
     eligible_students_count = eligible_students.count()
     
+    # Get students who have already submitted responses
+    responded_student_ids = all_responses.values_list('student_id', flat=True)
+    
+    # Get students who haven't submitted responses yet
+    pending_students = eligible_students.exclude(id__in=responded_student_ids).select_related('user', 'division', 'practical_batch')
+    pending_students_count = pending_students.count()
+    
+    # Calculate response rate
+    response_rate = (total_responses / eligible_students_count * 100) if eligible_students_count > 0 else 0
+    
     # Calculate count of active forms
     active_forms_count = FeedbackForm.objects.filter(is_active=True).count()
     
@@ -983,6 +1072,9 @@ def view_feedback_responses(request, form_id):
         'question_responses': question_responses,
         'total_responses': total_responses,
         'eligible_students_count': eligible_students_count,
+        'pending_students': pending_students,
+        'pending_students_count': pending_students_count,
+        'response_rate': response_rate,
         'active_forms_count': active_forms_count,
         'search_query': search_query,
         'filter_anonymous': filter_anonymous,
@@ -1043,54 +1135,102 @@ def bulk_delete_responses(request, form_id):
 @login_required
 @user_passes_test(is_admin)
 def export_responses(request, form_id):
-    """Export feedback responses to CSV"""
+    """Export feedback responses to XLSX with enhanced format and separate summary sheet"""
     feedback_form = get_object_or_404(FeedbackForm, id=form_id)
     
     if not request.user.is_staff:
         messages.error(request, "You don't have permission to export responses.")
         return redirect('dashboard')
     
-    # Create the HttpResponse object with CSV header
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="feedback_responses_{feedback_form.id}_{feedback_form.title[:20]}.csv"'
+    # Create workbook
+    wb = Workbook()
     
-    writer = csv.writer(response)
+    # Styling
+    title_font = Font(bold=True, size=14, color="FFFFFF")
+    title_fill = PatternFill(start_color="a50c22", end_color="a50c22", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    info_font = Font(bold=True, size=12)
+    stats_font = Font(bold=True, color="FFFFFF")
+    stats_fill = PatternFill(start_color="70AD47", end_color="70AD47", fill_type="solid")
+    center_alignment = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
     
-    # Write header row
+    # Get questions and responses
     questions = feedback_form.questions.all().order_by('order')
-    header = ['Student Roll Number', 'Student Name', 'Submission Date', 'Is Anonymous']
-    for question in questions:
-        header.append(f"Q{question.order}: {question.question_text[:50]}")
-    writer.writerow(header)
-    
-    # Add a note about anonymous responses
-    if feedback_form.allow_anonymous:
-        note_row = ['Note: Anonymous responses show "Anonymous Student" and "Anonymous-ID" to protect privacy', '', '', '']
-        for _ in questions:
-            note_row.append('')
-        writer.writerow(note_row)
-        writer.writerow([])  # Empty row for spacing
-    
-    # Write data rows
     responses = FeedbackResponse.objects.filter(form=feedback_form).select_related(
         'student__user'
     ).prefetch_related('answers__question')
+    total_responses = responses.count()
     
+    # SHEET 1: Individual Student Responses
+    ws1 = wb.active
+    ws1.title = "Student Responses"
+    current_row = 1
+    
+    # Add title and form information
+    ws1.merge_cells(f'A{current_row}:E{current_row}')
+    title_cell = ws1.cell(row=current_row, column=1, value=f"Feedback Response Report")
+    title_cell.font = title_font
+    title_cell.fill = title_fill
+    title_cell.alignment = center_alignment
+    current_row += 2
+    
+    # Add form details
+    info_data = [
+        ("Subject:", f"{feedback_form.subject.code} - {feedback_form.subject.name}"),
+        ("Division:", str(feedback_form.division)),
+        ("Batch:", str(feedback_form.practical_batch) if feedback_form.practical_batch else "All (Theory)"),
+        ("Professor:", str(feedback_form.professor)),
+        ("Form Title:", feedback_form.title),
+        ("Total Responses:", str(total_responses))
+    ]
+    
+    for label, value in info_data:
+        ws1.cell(row=current_row, column=1, value=label).font = info_font
+        ws1.cell(row=current_row, column=2, value=value)
+        current_row += 1
+    
+    current_row += 2
+    
+    # Individual Student Responses section
+    ws1.merge_cells(f'A{current_row}:E{current_row}')
+    section_cell = ws1.cell(row=current_row, column=1, value="Individual Student Responses")
+    section_cell.font = title_font
+    section_cell.fill = title_fill
+    section_cell.alignment = center_alignment
+    current_row += 2
+    
+    # Create header row for responses
+    header = ['Student Roll Number']
+    for question in questions:
+        header.append(f"Q{question.order}: {question.question_text}")
+    
+    # Write and style header row
+    for col, header_text in enumerate(header, 1):
+        cell = ws1.cell(row=current_row, column=col, value=header_text)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_alignment
+        cell.border = thin_border
+    
+    current_row += 1
+    
+    # Write student response data
     for feedback_response in responses:
         # Respect anonymity settings
         if feedback_response.is_anonymous:
             student_roll = f"Anonymous-{feedback_response.id}"
-            student_name = "Anonymous Student"
         else:
             student_roll = feedback_response.student.roll_number
-            student_name = feedback_response.student.user.get_full_name()
         
-        row = [
-            student_roll,
-            student_name,
-            feedback_response.submitted_at.strftime('%Y-%m-%d %H:%M:%S IST'),
-            'Yes' if feedback_response.is_anonymous else 'No'
-        ]
+        # Start row with student roll number
+        row_data = [student_roll]
         
         # Add answers in question order
         answers_dict = {answer.question_id: answer for answer in feedback_response.answers.all()}
@@ -1098,11 +1238,382 @@ def export_responses(request, form_id):
             answer = answers_dict.get(question.id)
             if answer:
                 answer_text = answer.get_answer()
-                row.append(str(answer_text) if answer_text is not None else '')
+                row_data.append(str(answer_text) if answer_text is not None else '')
             else:
-                row.append('')
+                row_data.append('')
         
-        writer.writerow(row)
+        # Write row to worksheet
+        for col, value in enumerate(row_data, 1):
+            cell = ws1.cell(row=current_row, column=col, value=value)
+            cell.border = thin_border
+            cell.alignment = center_alignment
+            
+        current_row += 1
+    
+    # Auto-adjust column widths for sheet 1
+    for col in range(1, len(header) + 1):
+        ws1.column_dimensions[get_column_letter(col)].width = 25
+    
+    # SHEET 2: Summary Statistics
+    ws2 = wb.create_sheet(title="Rating Summary")
+    current_row = 1
+    
+    # Title for summary sheet
+    ws2.merge_cells(f'A{current_row}:G{current_row}')
+    title_cell = ws2.cell(row=current_row, column=1, value=f"Rating Statistics Summary")
+    title_cell.font = title_font
+    title_cell.fill = title_fill
+    title_cell.alignment = center_alignment
+    current_row += 2
+    
+    # Add form details
+    for label, value in info_data:
+        ws2.cell(row=current_row, column=1, value=label).font = info_font
+        ws2.cell(row=current_row, column=2, value=value)
+        current_row += 1
+    
+    current_row += 2
+    
+    # Process rating questions for statistics
+    rating_questions = questions.filter(question_type='rating')
+    
+    if rating_questions.exists():
+        # Calculate max possible score
+        max_possible_score = len(rating_questions) * total_responses * 5
+        
+        # Add max score info
+        ws2.cell(row=current_row, column=1, value="Max Possible Score:").font = info_font
+        ws2.cell(row=current_row, column=2, value=f"{max_possible_score} (Questions: {len(rating_questions)} × Responses: {total_responses} × Max Rating: 5)")
+        current_row += 3
+        
+        # Create statistics table with ratings as rows and questions as columns
+        # Header row: Rating | Q1 | Q2 | Q3 | ... | Total
+        header_row = ['Rating']
+        for question in rating_questions:
+            header_row.append(f"Q{question.order}")
+        header_row.append('Total')
+        
+        # Write header
+        for col, header_text in enumerate(header_row, 1):
+            cell = ws2.cell(row=current_row, column=col, value=header_text)
+            cell.font = stats_font
+            cell.fill = stats_fill
+            cell.alignment = center_alignment
+            cell.border = thin_border
+        
+        current_row += 1
+        
+        # Collect all rating data first
+        rating_data = {}
+        question_totals = {}
+        
+        for question in rating_questions:
+            question_answers = FeedbackAnswer.objects.filter(
+                question=question,
+                response__form=feedback_form
+            )
+            
+            question_totals[question.id] = 0
+            for rating in range(1, 6):
+                if rating not in rating_data:
+                    rating_data[rating] = {}
+                
+                count = question_answers.filter(rating_answer=rating).count()
+                rating_data[rating][question.id] = count
+                question_totals[question.id] += count
+        
+        # Write rating rows (1-5)
+        for rating in range(1, 6):
+            row_data = [f"Rating {rating}"]
+            row_total = 0
+            
+            for question in rating_questions:
+                count = rating_data[rating].get(question.id, 0)
+                row_data.append(count)
+                row_total += count
+            
+            row_data.append(row_total)
+            
+            # Write row
+            for col, value in enumerate(row_data, 1):
+                cell = ws2.cell(row=current_row, column=col, value=value)
+                cell.border = thin_border
+                cell.alignment = center_alignment
+            
+            current_row += 1
+        
+        # Add total row
+        total_row = ['Total']
+        grand_total = 0
+        for question in rating_questions:
+            total = question_totals[question.id]
+            total_row.append(total)
+            grand_total += total
+        total_row.append(grand_total)
+        
+        # Write total row with bold font
+        for col, value in enumerate(total_row, 1):
+            cell = ws2.cell(row=current_row, column=col, value=value)
+            cell.font = Font(bold=True)
+            cell.border = thin_border
+            cell.alignment = center_alignment
+        
+        current_row += 1
+        
+        # Add weighted score row (rating × count)
+        score_row = ['Weighted Score']
+        grand_score = 0
+        for question in rating_questions:
+            question_score = 0
+            for rating in range(1, 6):
+                count = rating_data[rating].get(question.id, 0)
+                question_score += rating * count
+            score_row.append(question_score)
+            grand_score += question_score
+        score_row.append(grand_score)
+        
+        # Write weighted score row with bold font and different color
+        for col, value in enumerate(score_row, 1):
+            cell = ws2.cell(row=current_row, column=col, value=value)
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PatternFill(start_color="FF6600", end_color="FF6600", fill_type="solid")
+            cell.border = thin_border
+            cell.alignment = center_alignment
+        
+        current_row += 1
+        
+        # Add percentage row (weighted_score / max_possible_score * 100) - Total only
+        percentage_row = ['Overall Percentage (%)']
+        overall_max_score = len(rating_questions) * total_responses * 5
+        
+        # Add empty cells for individual question columns
+        for question in rating_questions:
+            percentage_row.append('')
+        
+        # Calculate and add overall percentage
+        overall_percentage = round((grand_score / overall_max_score * 100), 2) if overall_max_score > 0 else 0
+        percentage_row.append(f"{overall_percentage}%")
+        
+        # Write percentage row with bold font and purple color
+        for col, value in enumerate(percentage_row, 1):
+            cell = ws2.cell(row=current_row, column=col, value=value)
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PatternFill(start_color="9966CC", end_color="9966CC", fill_type="solid")
+            cell.border = thin_border
+            cell.alignment = center_alignment
+        
+        current_row += 3
+        
+        # Add average rating calculation
+        ws2.cell(row=current_row, column=1, value="Average Ratings:").font = info_font
+        current_row += 1
+        
+        avg_header = ['Question']
+        for question in rating_questions:
+            avg_header.append(f"Q{question.order}")
+        avg_header.append('Overall Avg')
+        
+        # Write average header
+        for col, header_text in enumerate(avg_header, 1):
+            cell = ws2.cell(row=current_row, column=col, value=header_text)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = center_alignment
+            cell.border = thin_border
+        
+        current_row += 1
+        
+        # Calculate and write averages
+        avg_row = ['Average Rating']
+        total_avg = 0
+        valid_questions = 0
+        
+        for question in rating_questions:
+            question_answers = FeedbackAnswer.objects.filter(
+                question=question,
+                response__form=feedback_form,
+                rating_answer__isnull=False
+            )
+            
+            if question_answers.exists():
+                total_score = sum(answer.rating_answer for answer in question_answers)
+                count = question_answers.count()
+                avg_rating = round(total_score / count, 2) if count > 0 else 0
+                avg_row.append(avg_rating)
+                total_avg += avg_rating
+                valid_questions += 1
+            else:
+                avg_row.append(0)
+        
+        overall_avg = round(total_avg / valid_questions, 2) if valid_questions > 0 else 0
+        avg_row.append(overall_avg)
+        
+        # Write average row
+        for col, value in enumerate(avg_row, 1):
+            cell = ws2.cell(row=current_row, column=col, value=value)
+            cell.font = Font(bold=True)
+            cell.border = thin_border
+            cell.alignment = center_alignment
+        
+    else:
+        # No rating questions message
+        ws2.cell(row=current_row, column=1, value="No rating questions found in this form.")
+    
+    # Auto-adjust column widths for sheet 2
+    for col in range(1, len(rating_questions) + 3):
+        ws2.column_dimensions[get_column_letter(col)].width = 15
+    
+    # SHEET 3: Individual Question Rating Charts
+    if rating_questions.exists():
+        ws3 = wb.create_sheet(title="Question Rating Charts")
+        current_row = 1
+        
+        # Title for charts sheet
+        ws3.merge_cells(f'A{current_row}:H{current_row}')
+        title_cell = ws3.cell(row=current_row, column=1, value="Individual Question Rating Distribution")
+        title_cell.font = title_font
+        title_cell.fill = title_fill
+        title_cell.alignment = center_alignment
+        current_row += 3
+        
+        # Create individual pie charts for each question
+        chart_row = current_row
+        
+        for i, question in enumerate(rating_questions):
+            # Calculate position for charts (2 charts per row)
+            col_offset = (i % 2) * 8 + 1  # Charts at columns A and I
+            row_offset = (i // 2) * 20    # New row every 2 charts
+            
+            data_start_row = chart_row + row_offset
+            data_col = col_offset
+            
+            # Question title
+            question_title = f"Q{question.order}: {question.question_text[:40]}..."
+            ws3.merge_cells(f'{get_column_letter(data_col)}{data_start_row}:{get_column_letter(data_col + 2)}{data_start_row}')
+            title_cell = ws3.cell(row=data_start_row, column=data_col, value=question_title)
+            title_cell.font = Font(bold=True, size=12)
+            title_cell.alignment = center_alignment
+            
+            # Data table headers
+            data_start_row += 2
+            ws3.cell(row=data_start_row, column=data_col, value="Rating").font = header_font
+            ws3.cell(row=data_start_row, column=data_col + 1, value="Students").font = header_font
+            ws3.cell(row=data_start_row, column=data_col + 2, value="Percentage").font = header_font
+            
+            # Get total responses for this question
+            question_total = 0
+            question_data = {}
+            for rating in range(1, 6):
+                count = rating_data[rating].get(question.id, 0)
+                question_data[rating] = count
+                question_total += count
+            
+            # Data rows with ratings, counts, and percentages
+            data_rows_start = data_start_row + 1
+            for rating in range(1, 6):
+                count = question_data[rating]
+                percentage = round((count / question_total * 100), 1) if question_total > 0 else 0
+                
+                row = data_rows_start + rating - 1
+                ws3.cell(row=row, column=data_col, value=f"Rating {rating}")
+                ws3.cell(row=row, column=data_col + 1, value=count)
+                ws3.cell(row=row, column=data_col + 2, value=f"{percentage}%")
+            
+            # Add total row
+            total_row = data_rows_start + 5
+            ws3.cell(row=total_row, column=data_col, value="Total").font = Font(bold=True)
+            ws3.cell(row=total_row, column=data_col + 1, value=question_total).font = Font(bold=True)
+            ws3.cell(row=total_row, column=data_col + 2, value="100.0%").font = Font(bold=True)
+            
+            # Create pie chart for this question
+            question_pie_chart = PieChart()
+            question_pie_chart.title = f"Q{question.order} Rating Distribution"
+            
+            # Define data ranges for this question (only include ratings with responses)
+            labels = Reference(ws3, min_col=data_col, min_row=data_rows_start, max_row=data_rows_start + 4)
+            data = Reference(ws3, min_col=data_col + 1, min_row=data_rows_start - 1, max_row=data_rows_start + 4)
+            
+            question_pie_chart.add_data(data, titles_from_data=True)
+            question_pie_chart.set_categories(labels)
+            question_pie_chart.height = 10
+            question_pie_chart.width = 12
+            
+            # Position chart next to the data
+            chart_cell = f"{get_column_letter(data_col + 4)}{data_start_row - 1}"
+            ws3.add_chart(question_pie_chart, chart_cell)
+        
+        # Calculate next available row for summary section
+        num_chart_rows = ((len(rating_questions) - 1) // 2 + 1) * 20
+        summary_start_row = chart_row + num_chart_rows + 5
+        
+        # Overall Summary Section
+        ws3.merge_cells(f'A{summary_start_row}:H{summary_start_row}')
+        summary_title = ws3.cell(row=summary_start_row, column=1, value="Overall Rating Summary")
+        summary_title.font = title_font
+        summary_title.fill = title_fill
+        summary_title.alignment = center_alignment
+        summary_start_row += 3
+        
+        # Overall statistics table
+        ws3.cell(row=summary_start_row, column=1, value="Rating").font = header_font
+        ws3.cell(row=summary_start_row, column=2, value="Total Students").font = header_font
+        ws3.cell(row=summary_start_row, column=3, value="Across All Questions").font = header_font
+        ws3.cell(row=summary_start_row, column=4, value="Percentage").font = header_font
+        
+        # Calculate overall statistics
+        overall_total = 0
+        overall_ratings = {}
+        for rating in range(1, 6):
+            total_for_rating = 0
+            for question in rating_questions:
+                total_for_rating += rating_data[rating].get(question.id, 0)
+            overall_ratings[rating] = total_for_rating
+            overall_total += total_for_rating
+        
+        # Write overall statistics
+        for rating in range(1, 6):
+            count = overall_ratings[rating]
+            percentage = round((count / overall_total * 100), 1) if overall_total > 0 else 0
+            
+            row = summary_start_row + rating
+            ws3.cell(row=row, column=1, value=f"Rating {rating}")
+            ws3.cell(row=row, column=2, value=count)
+            ws3.cell(row=row, column=3, value=f"Out of {overall_total} total responses")
+            ws3.cell(row=row, column=4, value=f"{percentage}%")
+        
+        # Add overall total
+        total_row = summary_start_row + 6
+        ws3.cell(row=total_row, column=1, value="Total").font = Font(bold=True)
+        ws3.cell(row=total_row, column=2, value=overall_total).font = Font(bold=True)
+        ws3.cell(row=total_row, column=3, value=f"{len(rating_questions)} questions × {total_responses} responses").font = Font(bold=True)
+        ws3.cell(row=total_row, column=4, value="100.0%").font = Font(bold=True)
+        
+        # Create overall pie chart
+        overall_pie_chart = PieChart()
+        overall_pie_chart.title = "Overall Rating Distribution (All Questions)"
+        
+        # Data for overall chart
+        overall_labels = Reference(ws3, min_col=1, min_row=summary_start_row + 1, max_row=summary_start_row + 5)
+        overall_data = Reference(ws3, min_col=2, min_row=summary_start_row, max_row=summary_start_row + 5)
+        
+        overall_pie_chart.add_data(overall_data, titles_from_data=True)
+        overall_pie_chart.set_categories(overall_labels)
+        overall_pie_chart.height = 12
+        overall_pie_chart.width = 15
+        
+        # Add overall chart
+        ws3.add_chart(overall_pie_chart, f"F{summary_start_row}")
+    
+    # Create response
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="feedback_responses_{feedback_form.id}_{feedback_form.title[:20]}.xlsx"'
     
     return response
 

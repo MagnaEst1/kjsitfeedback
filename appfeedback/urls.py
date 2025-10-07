@@ -27,6 +27,7 @@ urlpatterns = [
     
     # Student views
     path('fill-feedback/<int:form_id>/', views.fill_feedback_form_view, name='fill_feedback_form'),
+    # path('feedback-completed/<int:form_id>/', views.feedback_completed_view, name='feedback_completed'),  # Disabled - auto redirect now
     
     # Professor views
     path('professor-dashboard/', views.professor_dashboard_view, name='professor_dashboard'),
