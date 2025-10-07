@@ -1249,7 +1249,6 @@ def export_responses(request, form_id):
             cell.alignment = center_alignment
             
         current_row += 1
-    
     # Auto-adjust column widths for sheet 1
     for col in range(1, len(header) + 1):
         ws1.column_dimensions[get_column_letter(col)].width = 25
