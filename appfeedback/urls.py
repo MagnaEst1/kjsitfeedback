@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     path('', views.home_view, name='home'),
     path('adminlogin/', views.admin_login_view, name='admin_login'),
+    path('a/', views.admin_login_view, name='admin'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     
     # Admin views for feedback management
@@ -22,6 +23,7 @@ urlpatterns = [
     path('delete-response/<int:form_id>/<int:response_id>/', views.delete_feedback_response, name='delete_feedback_response'),
     path('bulk-delete-responses/<int:form_id>/', views.bulk_delete_responses, name='bulk_delete_responses'),
     path('export-responses/<int:form_id>/', views.export_responses, name='export_responses'),
+    path('export-all-responses/', views.export_all_responses, name='export_all_responses'),
     path('bulk-generate-forms/', views.bulk_generate_forms_page, name='bulk_generate_forms_page'),
     path('bulk-generate-feedback-forms/', views.bulk_generate_feedback_forms, name='bulk_generate_feedback_forms'),
     

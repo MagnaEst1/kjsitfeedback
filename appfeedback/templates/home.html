@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-
+{% load static %}
+{% load socialaccount %}
 {% block title %}Home - KJSIT Feedback System{% endblock %}
 
 {% block content %}
@@ -13,14 +14,8 @@
         <div class="relative z-10 max-w-6xl mx-auto px-4 py-16">
             <div class="text-center">
                 <!-- Main Logo/Icon -->
-                <div class="w-24 h-24 bg-gradient-to-br from-kjsit-red via-kjsit-red-light to-kjsit-red/80 rounded-3xl flex items-center justify-center shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-110 mx-auto mb-8 relative group">
-                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                    </svg>
-                    <!-- Animated ring -->
-                    <div class="absolute inset-0 rounded-3xl border-4 border-kjsit-red opacity-0 group-hover:opacity-100 group-hover:scale-125 transition-all duration-700"></div>
-                    <!-- Pulse effect -->
-                    <div class="absolute inset-0 rounded-3xl bg-kjsit-red opacity-0 group-hover:opacity-20 animate-pulse"></div>
+                <div class="w-24 h-24 sm:w-28 sm:h-28 bg-white rounded-3xl flex items-center justify-center shadow-xl mx-auto mb-8 border-2 border-kjsit-red/15">
+                    <img src="{% static 'appfeedback/images/somaiya.png' %}" alt="Somaiya Logo" class="w-20 h-20 sm:w-24 sm:h-24 object-contain">
                 </div>
 
                 <h1 class="text-6xl font-extrabold mb-6">
@@ -52,13 +47,16 @@
                             <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
                         </a>
                     {% else %}
-                        <a href="{% url 'login' %}" class="group relative overflow-hidden bg-gradient-to-r from-kjsit-red to-kjsit-red-light hover:from-kjsit-red-light hover:to-kjsit-red text-white px-8 py-4 rounded-2xl transition-all duration-300 shadow-2xl hover:shadow-3xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 text-lg font-bold">
+                        <a href="{% provider_login_url 'google' %}" class="group relative overflow-hidden bg-gradient-to-r from-kjsit-red to-kjsit-red-light hover:from-kjsit-red-light hover:to-kjsit-red text-white px-8 py-4 rounded-2xl transition-all duration-300 shadow-2xl hover:shadow-3xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 text-lg font-bold">
                             <div class="flex items-center space-x-3 relative z-10">
-                                <svg class="w-6 h-6 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                                <svg class="w-6 h-6 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <path d="M12 2C12 2 8 6 8 12C8 16 10 18 12 22C14 18 16 16 16 12C16 6 12 2 12 2Z"/>
+                                    <path d="M8 12L4 16"/>
+                                    <path d="M16 12L20 16"/>
+                                    <circle cx="12" cy="8" r="2"/>
                                 </svg>
                                 <span>Get Started</span>
-                                <svg class="w-5 h-5 opacity-0 group-hover:opacity-100 transform translate-x-0 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 transform translate-x-0 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                                 </svg>
                             </div>
@@ -66,7 +64,7 @@
                             <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
                         </a>
                         
-                        <a href="{% url 'admin_login' %}" class="group relative overflow-hidden bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-white px-8 py-4 rounded-2xl transition-all duration-300 shadow-2xl hover:shadow-3xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 text-lg font-bold">
+                        <a href="{% url 'admin_login' %}" class="hidden group relative overflow-hidden bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-white px-8 py-4 rounded-2xl transition-all duration-300 shadow-2xl hover:shadow-3xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 text-lg font-bold">
                             <div class="flex items-center space-x-3 relative z-10">
                                 <svg class="w-6 h-6 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>

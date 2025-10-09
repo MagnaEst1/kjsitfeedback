@@ -28,7 +28,7 @@ class Division(models.Model):
 
 class Professor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    employee_id = models.CharField(max_length=20, unique=True)
+    employee_id = models.CharField(max_length=100, unique=True)
     department = models.CharField(max_length=100)
     
     def __str__(self):

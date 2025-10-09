@@ -11,17 +11,78 @@
                 <h1 class="text-3xl font-bold text-kjsit-red mb-2">Manage Feedback Forms</h1>
                 <p class="text-gray-600">View, edit, and manage all feedback forms</p>
             </div>
-            <a href="{% url 'create_feedback_form' %}" 
-               class="bg-kjsit-red hover:bg-kjsit-red-dark text-white px-6 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 font-semibold">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                </svg>
-                <span>Create New Form</span>
-            </a>
+            <div class="flex gap-3">
+                <a href="{% url 'create_feedback_form' %}" 
+                   class="bg-kjsit-red hover:bg-kjsit-red-dark text-white px-6 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 font-semibold">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    <span>Create New Form</span>
+                </a>
+                <a href="{% url 'export_all_responses' %}" 
+                   class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 font-semibold">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                    </svg>
+                    <span>Export All Responses</span>
+                </a>
+            </div>
         </div>
     </div>
 
     {% if forms %}
+    <!-- Enhanced Search and Filter Section -->
+    <div class="bg-white rounded-xl shadow-lg border border-kjsit-red/20 p-6 mb-6">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-4">
+            <!-- Search Bar -->
+            <div class="flex-1 max-w-2xl">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <input type="text" 
+                           id="searchInput" 
+                           class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-kjsit-red focus:border-kjsit-red transition-all duration-200" 
+                           placeholder="Search forms by title, subject, or professor name...">
+                </div>
+            </div>
+            
+            <!-- Filter Buttons -->
+            <div class="flex flex-wrap gap-2">
+                <button onclick="filterForms('all', event)" 
+                        class="filter-btn active px-4 py-2 bg-kjsit-red text-white rounded-lg hover:bg-kjsit-red-dark transition-colors duration-200 text-sm font-medium">
+                    All Forms
+                </button>
+                <button onclick="filterForms('active', event)" 
+                        class="filter-btn px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 text-sm font-medium">
+                    Active Only
+                </button>
+                <button onclick="filterForms('inactive', event)" 
+                        class="filter-btn px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 text-sm font-medium">
+                    Inactive Only
+                </button>
+                <button onclick="filterForms('theory', event)" 
+                        class="filter-btn px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 text-sm font-medium">
+                    Theory
+                </button>
+                <button onclick="filterForms('practical', event)" 
+                        class="filter-btn px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 text-sm font-medium">
+                    Practical
+                </button>
+            </div>
+        </div>
+        
+        <!-- Results Counter -->
+        <div class="mt-4 pt-4 border-t border-gray-100">
+            <p class="text-sm text-gray-600">
+                Showing <span id="resultCount" class="font-semibold text-kjsit-red">{{ forms.count }}</span> 
+                of <span class="font-semibold">{{ forms.count }}</span> forms
+            </p>
+        </div>
+    </div>
+
     <!-- Simplified Stats -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div class="bg-white rounded-lg shadow border border-kjsit-red/20 p-4">
@@ -126,12 +187,12 @@
                                             Questions
                                         </a>
                                         
-                                        {% if form.responses.count > 0 %}
+                                        
                                             <a href="{% url 'view_feedback_responses' form.id %}" 
                                                class="text-green-600 hover:text-green-800 text-sm font-medium">
                                                 View Responses
                                             </a>
-                                        {% endif %}
+                                        
                                         
                                         <form method="post" action="{% url 'toggle_form_status' form.id %}" class="inline">
                                             {% csrf_token %}
@@ -175,4 +236,216 @@
         </div>
     {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const tableRows = document.querySelectorAll('tbody tr');
+    const resultCounter = document.getElementById('resultCount');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    
+    let currentFilter = 'all';
+    let totalForms = {{ forms.count }};
+    
+    // Search functionality
+    function performSearch() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        let visibleCount = 0;
+        
+        tableRows.forEach(row => {
+            // Skip if this is the no-results message row
+            if (row.classList.contains('no-results-message')) {
+                return;
+            }
+            
+            try {
+                // Get form title (first column, first div with text-kjsit-red class)
+                const formTitleElement = row.querySelector('td:first-child .text-kjsit-red');
+                const formTitle = formTitleElement ? formTitleElement.textContent.toLowerCase() : '';
+                
+                // Get subject name (second column, first div with text-gray-900 class)
+                const subjectNameElement = row.querySelector('td:nth-child(2) .text-gray-900');
+                const subjectName = subjectNameElement ? subjectNameElement.textContent.toLowerCase() : '';
+                
+                // Get professor name (second column, last div with text-gray-500 class)
+                const professorElements = row.querySelectorAll('td:nth-child(2) .text-gray-500');
+                const professorName = professorElements.length >= 2 ? professorElements[1].textContent.toLowerCase() : '';
+                
+                // Get division (first column, first div with text-gray-500 class)
+                const divisionElement = row.querySelector('td:first-child .text-gray-500');
+                const division = divisionElement ? divisionElement.textContent.toLowerCase() : '';
+                
+                const matchesSearch = searchTerm === '' || 
+                                    formTitle.includes(searchTerm) || 
+                                    subjectName.includes(searchTerm) || 
+                                    professorName.includes(searchTerm) ||
+                                    division.includes(searchTerm);
+                
+                const matchesFilter = checkFilterMatch(row, currentFilter);
+                
+                if (matchesSearch && matchesFilter) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            } catch (error) {
+                console.log('Error processing row:', error);
+                // Show the row if there's an error to be safe
+                row.style.display = '';
+                visibleCount++;
+            }
+        });
+        
+        if (resultCounter) {
+            resultCounter.textContent = visibleCount;
+        }
+        
+        // Show/hide empty state message
+        const tbody = document.querySelector('tbody');
+        const existingMessage = document.querySelector('.no-results-message');
+        
+        if (visibleCount === 0 && !existingMessage && tbody) {
+            const noResultsRow = document.createElement('tr');
+            noResultsRow.className = 'no-results-message';
+            noResultsRow.innerHTML = `
+                <td colspan="6" class="px-6 py-12 text-center">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No forms found</h3>
+                        <p class="text-gray-500">Try adjusting your search terms or filters</p>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(noResultsRow);
+        } else if (visibleCount > 0 && existingMessage) {
+            existingMessage.remove();
+        }
+    }
+    
+    // Filter functionality
+    function checkFilterMatch(row, filter) {
+        if (filter === 'all') return true;
+        
+        try {
+            // Get status badge (third column, span element)
+            const statusBadge = row.querySelector('td:nth-child(3) span');
+            const statusText = statusBadge ? statusBadge.textContent.trim() : '';
+            
+            // Get subject type (second column, first text-gray-500 element)
+            const subjectTypeElements = row.querySelectorAll('td:nth-child(2) .text-gray-500');
+            const subjectType = subjectTypeElements.length > 0 ? subjectTypeElements[0].textContent.toLowerCase() : '';
+            
+            switch (filter) {
+                case 'active':
+                    return statusText === 'Active';
+                case 'inactive':
+                    return statusText === 'Inactive';
+                case 'theory':
+                    return subjectType.includes('theory');
+                case 'practical':
+                    return subjectType.includes('practical');
+                default:
+                    return true;
+            }
+        } catch (error) {
+            console.log('Error in filter matching:', error);
+            return true; // Show the row if there's an error
+        }
+    }
+    
+    // Global filter function (called by buttons)
+    window.filterForms = function(filter, event) {
+        currentFilter = filter;
+        
+        // Update button states
+        filterButtons.forEach(btn => {
+            btn.classList.remove('active', 'bg-kjsit-red', 'text-white');
+            btn.classList.add('bg-gray-100', 'text-gray-700');
+        });
+        
+        // Get the clicked button (either from event parameter or event.target)
+        const clickedButton = event ? event.target : document.querySelector(`[onclick*="${filter}"]`);
+        if (clickedButton) {
+            clickedButton.classList.remove('bg-gray-100', 'text-gray-700');
+            clickedButton.classList.add('active', 'bg-kjsit-red', 'text-white');
+        }
+        
+        performSearch();
+    };
+    
+    // Add event listeners to filter buttons as backup
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const onclickAttr = this.getAttribute('onclick');
+            if (onclickAttr) {
+                const match = onclickAttr.match(/filterForms\('([^']+)'/);
+                if (match) {
+                    window.filterForms(match[1], e);
+                }
+            }
+        });
+    });
+    
+    // Real-time search
+    if (searchInput) {
+        searchInput.addEventListener('input', performSearch);
+        
+        // Clear search on escape
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                searchInput.value = '';
+                performSearch();
+                searchInput.blur();
+            }
+        });
+    }
+    
+    // Add keyboard shortcut (Ctrl/Cmd + K to focus search)
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            if (searchInput) {
+                searchInput.focus();
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.filter-btn.active {
+    background-color: #a50c22 !important;
+    color: white !important;
+}
+
+.filter-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#searchInput:focus {
+    box-shadow: 0 0 0 3px rgba(165, 12, 34, 0.1);
+}
+
+tbody tr {
+    transition: all 0.2s ease-in-out;
+}
+
+tbody tr:hover {
+    background-color: #fef2f2;
+}
+
+.no-results-message {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
 {% endblock %}

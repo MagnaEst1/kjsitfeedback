@@ -1619,6 +1619,98 @@ def export_responses(request, form_id):
 
 @login_required
 @user_passes_test(is_admin)
+def export_all_responses(request):
+    """Export all feedback responses organized by division and subject type in a zip file"""
+    import zipfile
+    import tempfile
+    import os
+    from collections import defaultdict
+    
+    if not request.user.is_staff:
+        messages.error(request, "You don't have permission to export responses.")
+        return redirect('dashboard')
+    
+    # Get all forms with responses
+    forms_with_responses = FeedbackForm.objects.filter(
+        responses__isnull=False
+    ).distinct().select_related(
+        'subject', 'professor__user', 'practical_batch'
+    ).prefetch_related('responses')
+    
+    if not forms_with_responses.exists():
+        messages.warning(request, "No feedback responses found to export.")
+        return redirect('manage_feedback_forms')
+    
+    # Create a temporary directory for the zip file
+    temp_dir = tempfile.mkdtemp()
+    zip_filename = os.path.join(temp_dir, 'all_feedback_responses.zip')
+    
+    try:
+        with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Group forms by division and subject type
+            organized_forms = defaultdict(lambda: defaultdict(list))
+            
+            for form in forms_with_responses:
+                division = form.division
+                subject_type = form.subject.subject_type
+                organized_forms[division][subject_type].append(form)
+            
+            # Process each division
+            for division, subject_types in organized_forms.items():
+                for subject_type, forms in subject_types.items():
+                    # Create folder structure: Division/SubjectType/
+                    folder_path = f"{division}/{subject_type.title()}"
+                    
+                    for form in forms:
+                        # Create a mock request for export_responses
+                        class MockRequest:
+                            def __init__(self, user):
+                                self.user = user
+                        
+                        mock_request = MockRequest(request.user)
+                        
+                        # Call the existing export_responses function
+                        excel_response = export_responses(mock_request, form.id)
+                        
+                        # Extract Excel content from the response
+                        excel_content = excel_response.content
+                        
+                        # Create safe filename
+                        safe_subject_name = "".join(c for c in form.subject.name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                        safe_professor_name = "".join(c for c in form.professor.user.get_full_name() if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                        
+                        filename = f"{safe_subject_name}_{safe_professor_name}_{form.subject.get_subject_type_display()}.xlsx"
+                        file_path = f"{folder_path}/{filename}"
+                        
+                        # Add to zip
+                        zipf.writestr(file_path, excel_content)
+        
+        # Read the zip file and create response
+        with open(zip_filename, 'rb') as f:
+            zip_content = f.read()
+        
+        response = HttpResponse(zip_content, content_type='application/zip')
+        response['Content-Disposition'] = 'attachment; filename="all_feedback_responses.zip"'
+        
+        return response
+        
+    except Exception as e:
+        messages.error(request, f"Error creating export file: {str(e)}")
+        return redirect('manage_feedback_forms')
+    
+    finally:
+        # Clean up temporary files
+        try:
+            if os.path.exists(zip_filename):
+                os.remove(zip_filename)
+            os.rmdir(temp_dir)
+        except:
+            pass
+
+
+
+@login_required
+@user_passes_test(is_admin)
 def delete_feedback_form_view(request, form_id):
     """Delete a feedback form"""
     feedback_form = get_object_or_404(FeedbackForm, id=form_id)
@@ -1654,7 +1746,7 @@ def test_messages_view(request):
 def bulk_generate_feedback_forms(request):
     """Generate feedback forms for all assignments automatically"""
     if request.method == 'POST':
-        form_title_prefix = request.POST.get('form_title_prefix', 'Feedback')
+        form_title_prefix = request.POST.get('form_title_prefix', '')
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
         
@@ -1696,12 +1788,12 @@ def bulk_generate_feedback_forms(request):
                             continue
                         
                         # Create form title
-                        form_title = f"{form_title_prefix} - {assignment.subject.name} - {assignment.professor.user.get_full_name()} - {assignment.division}"
+                        form_title = f"{form_title_prefix} {assignment.subject.name} - {assignment.professor.user.get_full_name()} - {assignment.division}"
                         
                         # Create feedback form
                         feedback_form = FeedbackForm.objects.create(
                             title=form_title,
-                            description=f"Automated feedback form for {assignment.subject.name} (Theory)",
+                            #description=f"Automated feedback form for {assignment.subject.name} (Theory)",
                             subject=assignment.subject,
                             professor=assignment.professor,
                             division=assignment.division,
@@ -1740,12 +1832,12 @@ def bulk_generate_feedback_forms(request):
                             continue
                         
                         # Create form title
-                        form_title = f"{form_title_prefix} - {assignment.subject.name} - {assignment.professor.user.get_full_name()} - {assignment.batch}"
+                        form_title = f"{form_title_prefix} {assignment.subject.name} - {assignment.professor.user.get_full_name()} - {assignment.batch}"
                         
                         # Create feedback form
                         feedback_form = FeedbackForm.objects.create(
                             title=form_title,
-                            description=f"Automated feedback form for {assignment.subject.name} ({assignment.subject.get_subject_type_display()})",
+                            #description=f"Automated feedback form for {assignment.subject.name} ({assignment.subject.get_subject_type_display()})",
                             subject=assignment.subject,
                             professor=assignment.professor,
                             division=assignment.batch.division,

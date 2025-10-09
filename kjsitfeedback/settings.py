@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-
+import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -92,11 +92,17 @@ WSGI_APPLICATION = 'kjsitfeedback.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+     'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'aidsfeedback',
+        'USER': 'studentfeedback',
+        'PASSWORD': 'ouT5sHs4UbBAKG6',
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
+
 }
+
 
 
 # Password validation
@@ -133,7 +139,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = '/home/b90w4bcece10/public_html/compfeedback.kjsieit.in/static'
+STATICFILES_DIRS = []
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -164,7 +173,7 @@ LOGIN_REDIRECT_URL = '/dashboard'
 # Where to redirect after logout
 LOGOUT_REDIRECT_URL = '/'
 SITE_ID = 1
-SOCIALACCOUNT_ONLY = False
+SOCIALACCOUNT_ONLY = True
 ACCOUNT_LOGOUT_ON_GET = True
 SOCIALACCOUNT_LOGIN_ON_GET=True
 ALLAUTH_UI_THEME = "dark"

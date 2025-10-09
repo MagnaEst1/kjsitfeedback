@@ -1,55 +1,50 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Student Dashboard - KJSIT Feedback{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto p-4">
+<div class="max-w-7xl mx-auto p-3 sm:p-4 lg:p-6 xl:p-8">
     <!-- Enhanced Welcome Card -->
-    <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 mb-8 relative overflow-hidden">
+    <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-xl sm:rounded-2xl shadow-xl sm:shadow-2xl border border-kjsit-red/20 p-4 sm:p-6 lg:p-8 xl:p-10 mb-6 sm:mb-8 relative overflow-hidden">
         <!-- Background decorative elements -->
-        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-kjsit-red/10 to-kjsit-red-light/10 rounded-full -translate-y-16 translate-x-16"></div>
-        <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-kjsit-red-light/10 to-kjsit-red/10 rounded-full translate-y-12 -translate-x-12"></div>
+        <div class="absolute top-0 right-0 w-20 h-20 sm:w-32 sm:h-32 bg-gradient-to-br from-kjsit-red/10 to-kjsit-red-light/10 rounded-full -translate-y-10 translate-x-10 sm:-translate-y-16 sm:translate-x-16"></div>
+        <div class="absolute bottom-0 left-0 w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-tr from-kjsit-red-light/10 to-kjsit-red/10 rounded-full translate-y-8 -translate-x-8 sm:translate-y-12 sm:-translate-x-12"></div>
         
         <div class="relative z-10">
-            <div class="flex items-start justify-between mb-4">
-                <div class="flex items-center space-x-4">
-                    <div class="w-16 h-16 bg-gradient-to-br from-kjsit-red via-kjsit-red-light to-kjsit-red/80 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between mb-4 space-y-4 sm:space-y-0">
+                <!-- Left side: Icon + Title + User Info -->
+                <div class="flex flex-col sm:flex-row sm:items-start sm:space-x-4 space-y-4 sm:space-y-0">
+                    <div class="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-kjsit-red via-kjsit-red-light to-kjsit-red/80 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 sm:hover:scale-110 mx-auto sm:mx-0 flex-shrink-0">
+                        <svg class="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                         </svg>
                     </div>
-                    <div>
-                        <div class="flex items-center space-x-3">
-                            <h1 class="text-4xl font-extrabold bg-gradient-to-r from-kjsit-red to-kjsit-red-light bg-clip-text text-transparent">Student Dashboard</h1>
-                            {% if student %}
-                                <span class="bg-kjsit-red-light/20 text-kjsit-red text-sm font-semibold px-3 py-1 rounded-full">
-                                    {{ completed_forms|length }} completed
-                                </span>
-                            {% endif %}
-                        </div>
+                    <div class="text-center sm:text-left flex-grow">
+                        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-kjsit-red to-kjsit-red-light bg-clip-text text-transparent">Student Dashboard</h1>
                         {% if student %}
-                            <p class="text-xl font-semibold text-gray-800 flex items-center space-x-2 mt-2">
-                                <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <p class="text-lg sm:text-xl font-semibold text-gray-800 flex items-center justify-center sm:justify-start space-x-2 mt-2">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                 </svg>
-                                <span>Welcome, {{ user.get_full_name }}!</span>
+                                <span class="text-base sm:text-xl">Welcome, {{ user.get_full_name }}!</span>
                             </p>
-                            <div class="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-600">
-                                <div class="flex items-center space-x-2 bg-kjsit-red/10 px-3 py-1 rounded-full">
-                                    <svg class="w-4 h-4 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 mt-3 text-xs sm:text-sm text-gray-600">
+                                <div class="flex items-center space-x-1 sm:space-x-2 bg-kjsit-red/10 px-2 py-1 sm:px-3 rounded-full">
+                                    <svg class="w-3 h-3 sm:w-4 sm:h-4 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
                                     </svg>
                                     <span class="font-medium">Roll: {{ student.roll_number }}</span>
                                 </div>
-                                <div class="flex items-center space-x-2 bg-kjsit-red-light/10 px-3 py-1 rounded-full">
-                                    <svg class="w-4 h-4 text-kjsit-red-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="flex items-center space-x-1 sm:space-x-2 bg-kjsit-red-light/10 px-2 py-1 sm:px-3 rounded-full">
+                                    <svg class="w-3 h-3 sm:w-4 sm:h-4 text-kjsit-red-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
                                     </svg>
                                     <span class="font-medium">Division: {{ student.division }}</span>
                                 </div>
                                 {% if student.practical_batch %}
-                                    <div class="flex items-center space-x-2 bg-kjsit-red/10 px-3 py-1 rounded-full">
-                                        <svg class="w-4 h-4 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div class="flex items-center space-x-1 sm:space-x-2 bg-kjsit-red/10 px-2 py-1 sm:px-3 rounded-full">
+                                        <svg class="w-3 h-3 sm:w-4 sm:h-4 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
                                         </svg>
                                         <span class="font-medium text-kjsit-red">Batch: {{ student.practical_batch.name }}</span>
@@ -57,8 +52,8 @@
                                 {% endif %}
                             </div>
                         {% else %}
-                            <p class="text-xl font-semibold text-gray-800 flex items-center space-x-2 mt-2">
-                                <svg class="w-5 h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <p class="text-lg sm:text-xl font-semibold text-gray-800 flex items-center justify-center sm:justify-start space-x-2 mt-2">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                 </svg>
                                 <span>Welcome, {{ user.first_name }}!</span>
@@ -69,27 +64,27 @@
                 
                 <!-- Stats Cards -->
                 {% if student %}
-                    <div class="flex gap-4">
-                        <div class="bg-white/80 backdrop-blur-sm border border-kjsit-red/20 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 min-w-[120px]">
+                    <div class="flex flex-row justify-center sm:justify-end gap-3 sm:gap-4 lg:gap-6">
+                        <div class="bg-white/80 backdrop-blur-sm border border-kjsit-red/20 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-5 shadow-lg hover:shadow-xl transition-all duration-300 min-w-[100px] sm:min-w-[120px] lg:min-w-[140px] flex-1 sm:flex-none max-w-[140px] lg:max-w-[160px]">
                             <div class="text-center">
-                                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-2">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-md sm:rounded-lg flex items-center justify-center mx-auto mb-1 sm:mb-2">
+                                    <svg class="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                     </svg>
                                 </div>
-                                <p class="text-2xl font-bold text-kjsit-red">{{ available_forms|length }}</p>
-                                <p class="text-xs font-medium text-gray-600">Available Forms</p>
+                                <p class="text-xl sm:text-2xl lg:text-3xl font-bold text-kjsit-red">{{ available_forms|length }}</p>
+                                <p class="text-xs sm:text-sm font-medium text-gray-600">Available</p>
                             </div>
                         </div>
-                        <div class="bg-white/80 backdrop-blur-sm border border-kjsit-red/20 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 min-w-[120px]">
+                        <div class="bg-white/80 backdrop-blur-sm border border-kjsit-red/20 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-5 shadow-lg hover:shadow-xl transition-all duration-300 min-w-[100px] sm:min-w-[120px] lg:min-w-[140px] flex-1 sm:flex-none max-w-[140px] lg:max-w-[160px]">
                             <div class="text-center">
-                                <div class="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mx-auto mb-2">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-md sm:rounded-lg flex items-center justify-center mx-auto mb-1 sm:mb-2">
+                                    <svg class="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
                                 </div>
-                                <p class="text-2xl font-bold text-kjsit-red">{{ completed_forms|length }}</p>
-                                <p class="text-xs font-medium text-gray-600">Completed Forms</p>
+                                <p class="text-xl sm:text-2xl lg:text-3xl font-bold text-kjsit-red">{{ completed_forms|length }}</p>
+                                <p class="text-xs sm:text-sm font-medium text-gray-600">Completed</p>
                             </div>
                         </div>
                     </div>
@@ -115,34 +110,34 @@
         </div>
     {% elif student %}
         <!-- Enhanced Available Feedback Forms -->
-        <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 mb-8 relative overflow-hidden">
+        <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-xl sm:rounded-2xl shadow-xl sm:shadow-2xl border border-kjsit-red/20 p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 relative overflow-hidden">
             <!-- Background decorative elements -->
-            <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-kjsit-red/5 to-kjsit-red-light/5 rounded-full -translate-y-20 translate-x-20"></div>
+            <div class="absolute top-0 right-0 w-24 h-24 sm:w-40 sm:h-40 bg-gradient-to-br from-kjsit-red/5 to-kjsit-red-light/5 rounded-full -translate-y-12 translate-x-12 sm:-translate-y-20 sm:translate-x-20"></div>
             
             <div class="relative z-10">
-                <div class="flex items-center space-x-4 mb-6">
-                    <div class="w-12 h-12 bg-gradient-to-br from-kjsit-red to-kjsit-red-light rounded-xl flex items-center justify-center shadow-lg">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 mb-4 sm:mb-6">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-kjsit-red to-kjsit-red-light rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg mx-auto sm:mx-0">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
                     </div>
-                    <div>
-                        <h2 class="text-3xl font-bold bg-gradient-to-r from-kjsit-red to-kjsit-red-light bg-clip-text text-transparent">Available Feedback Forms</h2>
-                        <p class="text-gray-600 mt-1">Complete your feedback to help improve our education quality</p>
+                    <div class="text-center sm:text-left">
+                        <h2 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-kjsit-red to-kjsit-red-light bg-clip-text text-transparent">Available Feedback Forms</h2>
+                        <p class="text-gray-600 mt-1 text-sm sm:text-base">Complete your feedback to help improve our education quality</p>
                     </div>
                 </div>
                 
                 {% if available_forms %}
-                    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <div class="grid gap-4 sm:gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4">
                         {% for form in available_forms %}
                             {% if form.subject.subject_type == 'theory' %}
-                                <div class="group relative bg-white border border-blue-200 rounded-2xl p-6 hover:shadow-2xl hover:shadow-blue-100 transition-all duration-300 hover:scale-105 hover:border-blue-400 overflow-hidden">
-                                    <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full -translate-y-10 translate-x-10 group-hover:scale-150 transition-transform duration-500"></div>
+                                <div class="group relative bg-white border border-blue-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:shadow-xl sm:hover:shadow-2xl hover:shadow-blue-100 transition-all duration-300 hover:scale-[1.02] sm:hover:scale-105 hover:border-blue-400 overflow-hidden touch-manipulation">
+                                    <div class="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full -translate-y-8 translate-x-8 sm:-translate-y-10 sm:translate-x-10 group-hover:scale-150 transition-transform duration-500"></div>
                                     
                                     <div class="relative z-10">
-                                        <div class="flex items-start justify-between mb-4">
-                                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
-                                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div class="flex items-start justify-between mb-3 sm:mb-4">
+                                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-md sm:rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+                                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                                                 </svg>
                                             </div>
@@ -151,22 +146,24 @@
                                             </div>
                                         </div>
                                         
-                                        <h4 class="font-bold text-xl text-gray-800 mb-3 group-hover:text-blue-600 transition-colors duration-300">{{ form.title }}</h4>
+                                        <h4 class="font-bold text-lg sm:text-xl text-gray-800 mb-2 sm:mb-3 group-hover:text-blue-600 transition-colors duration-300 line-clamp-2">{{ form.title }}</h4>
                                         
-                                        <div class="space-y-2 mb-4">
-                                            <div class="flex items-center space-x-2 text-sm">
-                                                <span class="text-gray-600"><strong class="text-gray-800">Subject:</strong> {{ form.subject.name }}</span>
+                                        <div class="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
+                                            <div class="flex items-start space-x-2 text-xs sm:text-sm">
+                                                <span class="text-gray-600 flex-shrink-0"><strong class="text-gray-800">Subject:</strong></span>
+                                                <span class="text-gray-600 line-clamp-1">{{ form.subject.name }}</span>
                                             </div>
-                                            <div class="flex items-center space-x-2 text-sm">
-                                                <span class="text-gray-600"><strong class="text-gray-800">Professor:</strong> {{ form.professor.user.get_full_name }}</span>
+                                            <div class="flex items-start space-x-2 text-xs sm:text-sm">
+                                                <span class="text-gray-600 flex-shrink-0"><strong class="text-gray-800">Professor:</strong></span>
+                                                <span class="text-gray-600 line-clamp-1">{{ form.professor.user.get_full_name }}</span>
                                             </div>
-                                            <div class="flex items-center space-x-2 text-sm">
+                                            <div class="flex items-center space-x-2 text-xs sm:text-sm">
                                                 <span class="text-gray-600"><strong class="text-gray-800">Due:</strong> {{ form.end_date|date:"M d, Y" }}</span>
                                             </div>
                                         </div>
                                         
                                         <a href="{% url 'fill_feedback_form' form.id %}" 
-                                           class="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-medium">
+                                           class="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-medium text-sm sm:text-base touch-manipulation active:scale-95">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                             </svg>
@@ -175,13 +172,13 @@
                                     </div>
                                 </div>
                             {% elif form.subject.subject_type == 'practical' %}
-                                <div class="group relative bg-white border border-green-200 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-100 transition-all duration-300 hover:scale-105 hover:border-green-400 overflow-hidden">
-                                    <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full -translate-y-10 translate-x-10 group-hover:scale-150 transition-transform duration-500"></div>
+                                <div class="group relative bg-white border border-green-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:shadow-xl sm:hover:shadow-2xl hover:shadow-green-100 transition-all duration-300 hover:scale-[1.02] sm:hover:scale-105 hover:border-green-400 overflow-hidden touch-manipulation">
+                                    <div class="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full -translate-y-8 translate-x-8 sm:-translate-y-10 sm:translate-x-10 group-hover:scale-150 transition-transform duration-500"></div>
                                     
                                     <div class="relative z-10">
-                                        <div class="flex items-start justify-between mb-4">
-                                            <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
-                                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div class="flex items-start justify-between mb-3 sm:mb-4">
+                                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-md sm:rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+                                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
                                                 </svg>
                                             </div>
@@ -190,27 +187,30 @@
                                             </div>
                                         </div>
                                         
-                                        <h4 class="font-bold text-xl text-gray-800 mb-3 group-hover:text-green-600 transition-colors duration-300">{{ form.title }}</h4>
+                                        <h4 class="font-bold text-lg sm:text-xl text-gray-800 mb-2 sm:mb-3 group-hover:text-green-600 transition-colors duration-300 line-clamp-2">{{ form.title }}</h4>
                                         
-                                        <div class="space-y-2 mb-4">
-                                            <div class="flex items-center space-x-2 text-sm">
-                                                <span class="text-gray-600"><strong class="text-gray-800">Subject:</strong> {{ form.subject.name }}</span>
+                                        <div class="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
+                                            <div class="flex items-start space-x-2 text-xs sm:text-sm">
+                                                <span class="text-gray-600 flex-shrink-0"><strong class="text-gray-800">Subject:</strong></span>
+                                                <span class="text-gray-600 line-clamp-1">{{ form.subject.name }}</span>
                                             </div>
-                                            <div class="flex items-center space-x-2 text-sm">
-                                                <span class="text-gray-600"><strong class="text-gray-800">Professor:</strong> {{ form.professor.user.get_full_name }}</span>
+                                            <div class="flex items-start space-x-2 text-xs sm:text-sm">
+                                                <span class="text-gray-600 flex-shrink-0"><strong class="text-gray-800">Professor:</strong></span>
+                                                <span class="text-gray-600 line-clamp-1">{{ form.professor.user.get_full_name }}</span>
                                             </div>
                                             {% if form.practical_batch %}
-                                                <div class="flex items-center space-x-2 text-sm">
-                                                    <span class="text-gray-600"><strong class="text-gray-800">Batch:</strong> {{ form.practical_batch.name }}</span>
+                                                <div class="flex items-start space-x-2 text-xs sm:text-sm">
+                                                    <span class="text-gray-600 flex-shrink-0"><strong class="text-gray-800">Batch:</strong></span>
+                                                    <span class="text-gray-600">{{ form.practical_batch.name }}</span>
                                                 </div>
                                             {% endif %}
-                                            <div class="flex items-center space-x-2 text-sm">
+                                            <div class="flex items-center space-x-2 text-xs sm:text-sm">
                                                 <span class="text-gray-600"><strong class="text-gray-800">Due:</strong> {{ form.end_date|date:"M d, Y" }}</span>
                                             </div>
                                         </div>
                                         
                                         <a href="{% url 'fill_feedback_form' form.id %}" 
-                                           class="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-medium">
+                                           class="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-medium text-sm sm:text-base touch-manipulation active:scale-95">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                             </svg>

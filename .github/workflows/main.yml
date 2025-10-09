@@ -1,0 +1,29 @@
+name: 🚀 Deploy websites on push
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  web-deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        site: [compfeedback, itfeedback, extcfeedback, aidsfeedback]
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v3
+
+      - name: 📂 Sync files
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ matrix.site }}.kjsieit.in
+          username: ${{ matrix.site }}
+          password: ${{ secrets.FTPPASSWORD }}
+          protocol: ftps
+          port: 21
+          exclude: |
+            **/.git*
+            **/*.xlsx
+            Data/**
+            kjsitfeedback/settings.py
+            passenger_wsgi.py
