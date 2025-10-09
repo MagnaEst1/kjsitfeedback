@@ -18,7 +18,6 @@ jobs:
           password: ${{ secrets.FTPPASSWORD }}
           protocol: ftps
           port: 21
-          passive: true
           exclude: |
             **/.git*
             **/.git*/**
@@ -44,7 +43,6 @@ jobs:
           password: ${{ secrets.FTPPASSWORD }}
           protocol: ftps
           port: 21
-          passive: true
           exclude: |
             **/.git*
             **/.git*/**
@@ -70,7 +68,6 @@ jobs:
           password: ${{ secrets.FTPPASSWORD }}
           protocol: ftps
           port: 21
-          passive: true
           exclude: |
             **/.git*
             **/.git*/**
@@ -95,7 +92,6 @@ jobs:
           password: ${{ secrets.FTPPASSWORD }}
           protocol: ftps
           port: 21
-          passive: true
           exclude: |
             **/.git*
             **/.git*/**
