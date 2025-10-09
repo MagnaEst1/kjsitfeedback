@@ -30,6 +30,7 @@ jobs:
             passenger_wsgi.py
             **/migrations/**
             **/__pycache__/**
+            defaultdata.txt
             uv.lock
 
   itfeedback:
@@ -59,6 +60,7 @@ jobs:
             passenger_wsgi.py
             **/migrations/**
             **/__pycache__/**
+            defaultdata.txt
             uv.lock
 
   extcfeedback:
@@ -88,6 +90,7 @@ jobs:
             passenger_wsgi.py
             **/migrations/**
             **/__pycache__/**
+            defaultdata.txt
             uv.lock
   aidsfeedback:
     runs-on: ubuntu-latest
@@ -116,4 +119,5 @@ jobs:
             passenger_wsgi.py
             **/migrations/**
             **/__pycache__/**
+            defaultdata.txt
             uv.lock
