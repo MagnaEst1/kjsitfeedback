@@ -32,6 +32,7 @@ jobs:
             **/__pycache__/**
             defaultdata.txt
             .gitignore
+            README.md
             uv.lock
 
   itfeedback:
@@ -63,6 +64,7 @@ jobs:
             **/__pycache__/**
             defaultdata.txt
             .gitignore
+            README.md
             uv.lock
 
   extcfeedback:
@@ -94,6 +96,7 @@ jobs:
             **/__pycache__/**
             defaultdata.txt
             .gitignore
+            README.md
             uv.lock
   aidsfeedback:
     runs-on: ubuntu-latest
@@ -125,3 +128,4 @@ jobs:
             defaultdata.txt
             uv.lock
             .gitignore
+            README.md
