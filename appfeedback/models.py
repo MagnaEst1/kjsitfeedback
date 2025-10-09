@@ -56,7 +56,7 @@ class Subject(models.Model):
         return ((self.semester - 1) // 2) + 1
     
     def __str__(self):
-        return f"{self.code} - {self.name} ({self.get_subject_type_display()})"
+        return f"{self.code} - {self.name} ({self.get_subject_type_display()})"  # type: ignore
 
 
 class PracticalBatch(models.Model):
