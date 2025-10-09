@@ -20,6 +20,8 @@ jobs:
           port: 21
           exclude: |
             **/.git*
+            appfeedback/templates
+            **/__init__.py
             **/.git*/**
             **/*.xlsx
             Data/**
@@ -45,6 +47,8 @@ jobs:
           port: 21
           exclude: |
             **/.git*
+            appfeedback/templates
+            **/__init__.py
             **/.git*/**
             **/*.xlsx
             Data/**
@@ -70,6 +74,8 @@ jobs:
           port: 21
           exclude: |
             **/.git*
+            appfeedback/templates
+            **/__init__.py
             **/.git*/**
             **/*.xlsx
             Data/**
@@ -94,6 +100,8 @@ jobs:
           port: 21
           exclude: |
             **/.git*
+            appfeedback/templates
+            **/__init__.py
             **/.git*/**
             **/*.xlsx
             Data/**
