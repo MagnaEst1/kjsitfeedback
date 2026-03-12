@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+
+{% block title %}Students Not Filled Forms - Feedback System{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header Section -->
+        <div class="mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Students Not Filled Forms</h1>
+                    <p class="text-gray-600">Track students who haven't completed their feedback forms</p>
+                </div>
+                <a href="{% url 'admin_dashboard' %}" class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition-colors duration-200 mt-4 sm:mt-0">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                <svg class="w-6 h-6 mr-3 text-kjsit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                </svg>
+                Filter by Year & Division
+            </h2>
+
+            <form method="GET" id="students-not-filled-filter-form" class="space-y-4 sm:space-y-0 sm:flex sm:items-end sm:gap-4">
+                <div class="flex-1">
+                    <label for="year" class="block text-sm font-semibold text-gray-700 mb-2">Academic Year</label>
+                    <select name="year" id="year" onchange="filterDivisionsBySelectedYear();" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-kjsit-red focus:border-transparent">
+                        <option value="">All Years</option>
+                        {% for year in years %}
+                            <option value="{{ year }}" {% if selected_year|stringformat:"s" == year|stringformat:"s" %}selected{% endif %}>
+                                {% if year == 1 %}FY - First Year{% elif year == 2 %}SY - Second Year{% elif year == 3 %}TY - Third Year{% else %}LY - Last Year{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="flex-1">
+                    <label for="division" class="block text-sm font-semibold text-gray-700 mb-2">Division</label>
+                    <select name="division" id="division" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-kjsit-red focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed">
+                        <option value="">All Divisions</option>
+                        {% for div in all_divisions %}
+                            <option value="{{ div.id }}" data-year="{{ div.year }}" {% if selected_division|stringformat:"s" == div.id|stringformat:"s" %}selected{% endif %}>
+                                Division {{ div.name }} ({{ div.get_year_display }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="w-full sm:w-auto px-6 py-2 bg-gradient-to-r from-kjsit-red to-kjsit-red-light text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-200">
+                    <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    Filter
+                </button>
+            </form>
+        </div>
+
+        <!-- Results Section -->
+        {% if students_not_filled %}
+            <div class="space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div>
+                        <p class="text-sm text-blue-700">
+                            <strong>{{ students_not_filled|length }}</strong> student(s) have not completed their feedback forms
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        
+                        <form method="POST" action="{% url 'export_students_not_filled' %}" class="inline-flex items-center gap-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="year" value="{{ selected_year }}">
+                            <input type="hidden" name="division" value="{{ selected_division }}">
+                            <button type="submit" name="export_type" value="xlsx" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors duration-200">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                                </svg>
+                                Export XLSX
+                            </button>
+                            <button type="submit" name="export_type" value="pdf" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors duration-200">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 11h6m-6 4h10M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+                                </svg>
+                                Export PDF
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                {% for item in students_not_filled %}
+                    <details class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-200 group">
+                        <summary class="cursor-pointer p-6 hover:bg-gray-50 transition-colors duration-200 flex items-center justify-between">
+                            <div class="flex-grow">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-6">
+                                    <h3 class="text-lg font-bold text-gray-900">{{ item.student.user.get_full_name }}</h3>
+                                    <p class="text-sm text-gray-600">Roll: {{ item.student.roll_number }}</p>
+                                    <p class="text-sm text-gray-600">Division {{ item.student.division.name }}</p>
+                                    <p class="text-sm text-gray-600">{{ item.student.division.get_year_display }}</p>
+                                </div>
+                            </div>
+
+                            <div class="ml-4 flex items-center space-x-4">
+                                <div class="text-right hidden sm:block">
+                                    <div class="inline-flex items-center px-3 py-1 rounded-full bg-red-100 border border-red-200">
+                                        <svg class="w-4 h-4 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16H7v-4h6v4z"/>
+                                        </svg>
+                                        <span class="text-sm font-semibold text-red-700">{{ item.unfilled_forms }}/{{ item.total_forms }} pending</span>
+                                    </div>
+                                </div>
+                                <svg class="w-6 h-6 text-gray-400 transform transition-transform duration-200 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </div>
+                        </summary>
+
+                        <div class="px-6 pb-6 pt-2 border-t border-gray-200 bg-gray-50">
+                            <div class="mb-4">
+                                <h4 class="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                    </svg>
+                                    Pending Feedback Forms
+                                </h4>
+                                <div class="space-y-2">
+                                    {% for form in item.forms %}
+                                        <div class="flex items-start p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                                            <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mr-3" style="background-color: 
+                                                {% if form.subject.subject_type == 'theory' %}
+                                                    #DBEAFE
+                                                {% elif form.subject.subject_type == 'practical' %}
+                                                    #DCFCE7
+                                                {% else %}
+                                                    #E9D5FF
+                                                {% endif %}">
+                                                <svg class="w-4 h-4" style="color: 
+                                                    {% if form.subject.subject_type == 'theory' %}
+                                                        #1E40AF
+                                                    {% elif form.subject.subject_type == 'practical' %}
+                                                        #16A34A
+                                                    {% else %}
+                                                        #7E22CE
+                                                    {% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                </svg>
+                                            </div>
+                                            <div class="flex-grow">
+                                                <p class="font-semibold text-gray-800">{{ form.title }}</p>
+                                                <p class="text-xs text-gray-600">{{ form.subject.name }} • {{ form.professor.user.get_full_name }}</p>
+                                                <p class="text-xs text-gray-500 mt-1">
+                                                    {% if form.subject.subject_type == 'theory' %}
+                                                        <span class="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">Theory</span>
+                                                    {% elif form.subject.subject_type == 'practical' %}
+                                                        <span class="inline-block px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">Practical</span>
+                                                    {% else %}
+                                                        <span class="inline-block px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">Tutorial</span>
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                            <div class="flex-shrink-0 text-right">
+                                                <p class="text-xs font-semibold text-gray-500">Due: {{ form.end_date|date:"M d, Y" }}</p>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-16">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">All Set!</h3>
+                <p class="text-gray-600 max-w-md mx-auto">
+                    {% if selected_year or selected_division %}
+                        All students in the selected year and division have completed their feedback forms.
+                    {% else %}
+                        All students have completed their feedback forms.
+                    {% endif %}
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+<script>
+(function () {
+    function initYearDivisionFilter() {
+        const yearSelect = document.getElementById('year');
+        const divisionSelect = document.getElementById('division');
+
+        if (!yearSelect || !divisionSelect) {
+            return;
+        }
+
+        const sourceOptions = Array.from(divisionSelect.querySelectorAll('option[data-year]')).map(function (opt) {
+            return {
+                value: opt.value,
+                year: String(opt.getAttribute('data-year')),
+                label: opt.textContent,
+            };
+        });
+
+        function applyDivisionFilter() {
+            const selectedYear = String(yearSelect.value || '');
+            const previousDivision = String(divisionSelect.value || '');
+
+            divisionSelect.innerHTML = '';
+
+            const allDivOption = document.createElement('option');
+            allDivOption.value = '';
+            allDivOption.textContent = 'All Divisions';
+            divisionSelect.appendChild(allDivOption);
+
+            const visibleOptions = selectedYear
+                ? sourceOptions.filter(function (opt) { return opt.year === selectedYear; })
+                : sourceOptions;
+
+            visibleOptions.forEach(function (opt) {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.label;
+                divisionSelect.appendChild(option);
+            });
+
+            if (!selectedYear) {
+                divisionSelect.value = '';
+                divisionSelect.disabled = true;
+                return;
+            }
+
+            divisionSelect.disabled = false;
+            const stillValid = visibleOptions.some(function (opt) { return opt.value === previousDivision; });
+            divisionSelect.value = stillValid ? previousDivision : '';
+        }
+
+        yearSelect.addEventListener('change', applyDivisionFilter);
+        yearSelect.addEventListener('input', applyDivisionFilter);
+
+        // Keep compatibility with inline onchange attribute.
+        window.filterDivisionsBySelectedYear = applyDivisionFilter;
+
+        applyDivisionFilter();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initYearDivisionFilter);
+    } else {
+        initYearDivisionFilter();
+    }
+})();
+</script>
+{% endblock %}

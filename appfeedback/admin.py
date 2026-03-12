@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Division, Professor, Subject, PracticalBatch, PracticalAssignment, Student, 
     TeacherAssignment, FeedbackForm, FeedbackQuestion, 
-    FeedbackResponse, FeedbackAnswer
+    FeedbackResponse, FeedbackAnswer, StudentElectiveSelection, StoredExport
 )
 
 
@@ -50,10 +50,10 @@ class ProfessorAdmin(admin.ModelAdmin):
 
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'subject_type', 'get_year', 'semester']
-    list_filter = ['subject_type', 'semester']
+    list_display = ['code', 'name', 'subject_type', 'get_year', 'semester', 'elective']
+    list_filter = ['subject_type', 'semester', 'elective']
     search_fields = ['name', 'code']
-    ordering = ['semester', 'name']
+    ordering = ['semester', 'elective', 'name']
     
     def get_year(self, obj):
         return obj.year
@@ -104,6 +104,22 @@ class StudentAdmin(admin.ModelAdmin):
                 user.delete()
             except Exception:
                 pass  # User might have been deleted already
+
+
+@admin.register(StudentElectiveSelection)
+class StudentElectiveSelectionAdmin(admin.ModelAdmin):
+    list_display = ['student', 'get_subject_code', 'get_subject_name', 'elective_group', 'semester', 'selected_at']
+    list_filter = ['elective_group', 'semester', 'subject__semester']
+    search_fields = ['student__roll_number', 'student__user__first_name', 'student__user__last_name', 'subject__code', 'subject__name']
+    ordering = ['student', 'semester', 'elective_group']
+    
+    def get_subject_code(self, obj):
+        return obj.subject.code
+    get_subject_code.short_description = 'Subject Code'
+    
+    def get_subject_name(self, obj):
+        return obj.subject.name
+    get_subject_name.short_description = 'Subject Name'
 
 
 @admin.register(TeacherAssignment)
@@ -160,3 +176,10 @@ class FeedbackAnswerAdmin(admin.ModelAdmin):
     list_display = ['response', 'question', 'get_answer']
     list_filter = ['question__question_type']
     search_fields = ['response__student__roll_number', 'question__question_text']
+
+
+@admin.register(StoredExport)
+class StoredExportAdmin(admin.ModelAdmin):
+    list_display = ['title', 'uploaded_at', 'uploaded_by']
+    search_fields = ['title', 'uploaded_by__username', 'uploaded_by__first_name', 'uploaded_by__last_name']
+    ordering = ['-uploaded_at']

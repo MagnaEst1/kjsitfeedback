@@ -12,7 +12,8 @@
         <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-kjsit-red-light/10 to-kjsit-red/10 rounded-full translate-y-12 -translate-x-12"></div>
         
         <div class="relative z-10">
-            <div class="flex items-center space-x-4 mb-4">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-2">
+                <div class="flex items-center space-x-4">
                 <div class="w-16 h-16 bg-gradient-to-br from-kjsit-red via-kjsit-red-light to-kjsit-red/80 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
                     <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -24,136 +25,129 @@
                     <p class="text-xl font-semibold text-gray-700">Manage feedback forms and view system statistics</p>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Enhanced Quick Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div class="group bg-gradient-to-br from-kjsit-red via-kjsit-red-light to-kjsit-red/80 text-white rounded-2xl p-8 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
-            <div class="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-10 translate-x-10 group-hover:scale-125 transition-transform duration-500"></div>
-            <div class="relative z-10 text-center">
-                <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-lg mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
-                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
+                <div class="grid grid-cols-2 gap-3 w-full lg:w-auto">
+                    <div class="bg-white/80 backdrop-blur-sm border border-kjsit-red/20 rounded-xl px-4 py-3 text-center min-w-[140px]">
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Forms</p>
+                        <p class="text-2xl font-extrabold text-kjsit-red">{{ total_forms }}</p>
+                    </div>
+                    <div class="bg-white/80 backdrop-blur-sm border border-kjsit-red/20 rounded-xl px-4 py-3 text-center min-w-[140px]">
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Active Forms</p>
+                        <p class="text-2xl font-extrabold text-kjsit-red">{{ active_forms }}</p>
+                    </div>
                 </div>
-                <h3 class="text-xl font-bold mb-2">Total Forms</h3>
-                <p class="text-4xl font-extrabold">{{ total_forms }}</p>
-            </div>
-        </div>
-        
-        <div class="group bg-gradient-to-br from-kjsit-red/90 via-kjsit-red-light/85 to-kjsit-red/70 text-white rounded-2xl p-8 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 border border-kjsit-red/30">
-            <div class="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-10 translate-x-10 group-hover:scale-125 transition-transform duration-500"></div>
-            <div class="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-kjsit-red-light/20 to-transparent rounded-full translate-y-8 -translate-x-8"></div>
-            <div class="relative z-10 text-center">
-                <div class="w-16 h-16 bg-white/25 rounded-2xl flex items-center justify-center shadow-xl mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 border border-white/20">
-                    <svg class="w-8 h-8 text-white drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-bold mb-2 drop-shadow-md">Active Forms</h3>
-                <p class="text-4xl font-extrabold drop-shadow-lg">{{ active_forms }}</p>
             </div>
         </div>
     </div>
 
-    <!-- Enhanced Quick Actions -->
-    <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 mb-8 relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-kjsit-red/5 to-kjsit-red-light/5 rounded-full -translate-y-16 translate-x-16"></div>
-        
-        <div class="relative z-10">
-            <div class="flex items-center space-x-3 mb-6">
-                <div class="w-12 h-12 bg-gradient-to-br from-kjsit-red to-kjsit-red-light rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 mb-8">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-kjsit-red rounded-xl flex items-center justify-center shadow-lg">
                     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                     </svg>
                 </div>
-                <h2 class="text-3xl font-bold text-gray-800">Quick Actions</h2>
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">Quick Actions</h2>
+                    <p class="text-sm text-gray-600">Use shortcuts to perform common admin tasks quickly.</p>
+                </div>
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <a href="{% url 'create_feedback_form' %}" 
-                   class="group relative overflow-hidden bg-gradient-to-r from-kjsit-red to-kjsit-red-light hover:from-kjsit-red-light hover:to-kjsit-red text-white p-6 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 backdrop-blur-sm">
-                    <div class="absolute inset-0 bg-gradient-to-r from-kjsit-red/90 to-kjsit-red-light/90 rounded-2xl"></div>
-                    <div class="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/10 rounded-2xl"></div>
-                    <div class="flex items-center justify-center relative z-10">
-                        <svg class="w-8 h-8 mr-3 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                        </svg>
-                        <span class="text-lg font-bold drop-shadow-md">Create New Form</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <a href="{% url 'create_feedback_form' %}" class="group rounded-xl border border-gray-200 bg-gradient-to-br from-white to-red-50 p-5 hover:border-kjsit-red/40 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-kjsit-red/30">
+                <div class="flex items-start justify-between">
+                    <div class="w-10 h-10 rounded-lg bg-kjsit-red text-white flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                     </div>
-                    <!-- Enhanced shine effect -->
-                    <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-out"></div>
-                    <!-- Inner shadow for depth -->
-                    <div class="absolute inset-0 rounded-2xl shadow-inner shadow-black/20"></div>
-                </a>
-                
-                <a href="{% url 'bulk_generate_forms_page' %}" 
-                   class="group relative overflow-hidden bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white p-6 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 backdrop-blur-sm">
-                    <div class="absolute inset-0 bg-gradient-to-r from-purple-600/90 to-purple-700/90 rounded-2xl"></div>
-                    <div class="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/10 rounded-2xl"></div>
-                    <div class="flex items-center justify-center relative z-10">
-                        <svg class="w-8 h-8 mr-3 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10M15 7a2 2 0 00-2-2H9a2 2 0 00-2 2"/>
-                        </svg>
-                        <span class="text-lg font-bold drop-shadow-md">Bulk Generate</span>
+                    <span class="text-xs text-kjsit-red font-semibold">Open</span>
+                </div>
+                <h3 class="mt-4 text-lg font-bold text-gray-900">Create New Form</h3>
+                <p class="text-sm text-gray-600 mt-1">Create one feedback form manually with custom settings.</p>
+            </a>
+
+            <a href="{% url 'bulk_generate_forms_page' %}" class="group rounded-xl border border-gray-200 bg-gradient-to-br from-white to-violet-50 p-5 hover:border-violet-400 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-300">
+                <div class="flex items-start justify-between">
+                    <div class="w-10 h-10 rounded-lg bg-violet-600 text-white flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2"/></svg>
                     </div>
-                    <!-- Enhanced shine effect -->
-                    <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-out"></div>
-                    <!-- Inner shadow for depth -->
-                    <div class="absolute inset-0 rounded-2xl shadow-inner shadow-black/20"></div>
-                </a>
-                
-                <a href="{% url 'manage_feedback_forms' %}" 
-                   class="group relative overflow-hidden bg-gradient-to-r from-kjsit-red/85 to-kjsit-red-light/85 hover:from-kjsit-red hover:to-kjsit-red-light text-white p-6 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 backdrop-blur-sm">
-                    <div class="absolute inset-0 bg-gradient-to-r from-kjsit-red/80 to-kjsit-red-light/80 rounded-2xl"></div>
-                    <div class="absolute inset-0 bg-gradient-to-b from-white/15 via-transparent to-black/15 rounded-2xl"></div>
-                    <div class="flex items-center justify-center relative z-10">
-                        <svg class="w-8 h-8 mr-3 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                        </svg>
-                        <span class="text-lg font-bold drop-shadow-md">Manage Forms</span>
+                    <span class="text-xs text-violet-700 font-semibold">Open</span>
+                </div>
+                <h3 class="mt-4 text-lg font-bold text-gray-900">Bulk Generate</h3>
+                <p class="text-sm text-gray-600 mt-1">Generate multiple forms for assigned subjects in one go.</p>
+            </a>
+
+            <a href="{% url 'manage_feedback_forms' %}" class="group rounded-xl border border-gray-200 bg-gradient-to-br from-white to-rose-50 p-5 hover:border-rose-400 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-rose-300">
+                <div class="flex items-start justify-between">
+                    <div class="w-10 h-10 rounded-lg bg-rose-600 text-white flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>
                     </div>
-                    <!-- Enhanced shine effect -->
-                    <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out"></div>
-                    <!-- Inner shadow for depth -->
-                    <div class="absolute inset-0 rounded-2xl shadow-inner shadow-black/15"></div>
-                </a>
-                
-                <a href="/admin/" 
-                   class="group relative overflow-hidden bg-gradient-to-r from-kjsit-red-light/90 to-kjsit-red/90 hover:from-kjsit-red hover:to-kjsit-red-light text-white p-6 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-110 transform border-2 border-transparent hover:border-white/20 backdrop-blur-sm">
-                    <div class="absolute inset-0 bg-gradient-to-r from-kjsit-red-light/85 to-kjsit-red/85 rounded-2xl"></div>
-                    <div class="absolute inset-0 bg-gradient-to-b from-white/12 via-transparent to-black/12 rounded-2xl"></div>
-                    <div class="flex items-center justify-center relative z-10">
-                        <svg class="w-8 h-8 mr-3 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
-                        <span class="text-lg font-bold drop-shadow-md">Django Admin</span>
+                    <span class="text-xs text-rose-700 font-semibold">Open</span>
+                </div>
+                <h3 class="mt-4 text-lg font-bold text-gray-900">Manage Forms</h3>
+                <p class="text-sm text-gray-600 mt-1">Edit forms, review status, export responses, and clear data.</p>
+            </a>
+
+            <a href="{% url 'students_not_filled' %}" class="group rounded-xl border border-gray-200 bg-gradient-to-br from-white to-blue-50 p-5 hover:border-blue-400 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                <div class="flex items-start justify-between">
+                    <div class="w-10 h-10 rounded-lg bg-blue-600 text-white flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM6 20h12a6 6 0 00-6-6 6 6 0 00-6 6z"/></svg>
                     </div>
-                    <!-- Enhanced shine effect -->
-                    <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out"></div>
-                    <!-- Inner shadow for depth -->
-                    <div class="absolute inset-0 rounded-2xl shadow-inner shadow-black/15"></div>
-                </a>
-            </div>
+                    <span class="text-xs text-blue-700 font-semibold">Open</span>
+                </div>
+                <h3 class="mt-4 text-lg font-bold text-gray-900">Not Filled Students</h3>
+                <p class="text-sm text-gray-600 mt-1">Track pending student feedback by year and division.</p>
+            </a>
+
+            <a href="{% url 'stored_exports' %}" class="group rounded-xl border border-gray-200 bg-gradient-to-br from-white to-emerald-50 p-5 hover:border-emerald-400 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300">
+                <div class="flex items-start justify-between">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7z"/></svg>
+                    </div>
+                    <span class="text-xs text-emerald-700 font-semibold">Open</span>
+                </div>
+                <h3 class="mt-4 text-lg font-bold text-gray-900">Stored Archives</h3>
+                <p class="text-sm text-gray-600 mt-1">View, rename, download, and upload archive export files.</p>
+            </a>
+
+            <a href="/admin/" class="group rounded-xl border border-gray-200 bg-gradient-to-br from-white to-amber-50 p-5 hover:border-amber-400 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-300">
+                <div class="flex items-start justify-between">
+                    <div class="w-10 h-10 rounded-lg bg-amber-600 text-white flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z"/></svg>
+                    </div>
+                    <span class="text-xs text-amber-700 font-semibold">Open</span>
+                </div>
+                <h3 class="mt-4 text-lg font-bold text-gray-900">Django Admin</h3>
+                <p class="text-sm text-gray-600 mt-1">Open built-in admin for low-level data and user management.</p>
+            </a>
         </div>
     </div>
 
-    <!-- Enhanced Recent Forms -->
-    <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 relative overflow-hidden">
+    
+
+    <!-- Collapsible Recent Forms -->
+    <details class="group bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-8 relative overflow-hidden">
         <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-kjsit-red/5 to-kjsit-red-light/5 rounded-full -translate-y-16 translate-x-16"></div>
-        
-        <div class="relative z-10">
-            <div class="flex items-center space-x-3 mb-6">
-                <div class="w-12 h-12 bg-gradient-to-br from-kjsit-red to-kjsit-red-light rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
+        <summary class="relative z-10 list-none cursor-pointer flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-kjsit-red to-kjsit-red-light rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-110">
                     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
-                <h2 class="text-3xl font-bold text-gray-800">Recent Forms</h2>
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">Recent Forms</h2>
+                    <p class="text-sm text-gray-600">Click to expand</p>
+                </div>
             </div>
-            
+            <svg class="w-7 h-7 text-kjsit-red transition-transform duration-200 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </summary>
+
+        <div class="relative z-10 mt-6">
             {% if recent_forms %}
                 <div class="overflow-x-auto rounded-2xl border border-kjsit-red/20 shadow-lg">
                     <table class="min-w-full divide-y divide-kjsit-red/10">
@@ -263,7 +257,7 @@
                     View all forms →
                 </a>
             </div>
-        {% else %}
+            {% else %}
             <div class="text-center py-12">
                 <div class="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center shadow-lg mx-auto mb-6">
                     <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -274,7 +268,49 @@
                 <p class="text-gray-600 mb-6">Create your first feedback form to get started with collecting student responses.</p>
                 
             </div>
-        {% endif %}
+            {% endif %}
+        </div>
+    </details>
+<!-- Danger Zone: Clear Data -->
+    <div class="bg-gradient-to-br from-red-50 via-red-50/50 to-red-100/30 rounded-2xl shadow-xl border-2 border-red-200 p-8 mt-5 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-40 h-40 bg-red-200/20 rounded-full -translate-y-20 translate-x-20 blur-3xl"></div>
+        
+        <div class="relative z-10">
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-12 h-12 bg-gradient-to-br from-red-600 to-red-700 rounded-xl flex items-center justify-center shadow-lg">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-red-900">Danger Zone</h2>
+                    <p class="text-sm text-red-700">Destructive actions that cannot be undone</p>
+                </div>
+            </div>
+            
+            <div class="bg-white/70 backdrop-blur-sm rounded-xl border border-red-200 p-6 shadow-sm">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-red-900 mb-1">Clear All Data</h3>
+                        <p class="text-sm text-red-700">
+                            Export all feedback responses as a ZIP file, then permanently delete all students, subjects, 
+                            practical assignments, and theory assignments. This action cannot be undone.
+                        </p>
+                    </div>
+                    <a href="{% url 'clear_data' %}" 
+                       class="group relative overflow-hidden bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform border-2 border-transparent hover:border-red-900/50 whitespace-nowrap flex-shrink-0">
+                        <div class="absolute inset-0 bg-gradient-to-r from-red-600/90 to-red-700/90 rounded-lg"></div>
+                        <div class="absolute inset-0 bg-gradient-to-b from-white/15 via-transparent to-black/15 rounded-lg"></div>
+                        <div class="flex items-center justify-center relative z-10">
+                            <svg class="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                            <span>Clear Data</span>
+                        </div>
+                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out rounded-lg"></div>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
 {% endblock %}

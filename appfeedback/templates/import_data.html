@@ -22,14 +22,87 @@
                     <p class="text-xl font-semibold text-gray-700">Upload Excel files to import professors, students, subjects, and assignments</p>
                 </div>
             </div>
+
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4 mb-6">
+        <div class="text-sm text-gray-700 font-medium">
+            Recommended order:
+            <span class="font-semibold text-gray-900">Subjects -> Professors -> Students -> Practical -> Theory</span>
         </div>
     </div>
 
     <!-- Import Sections Grid -->
-    <div class="grid gap-8 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+    <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
         
+        <!-- Subjects Import -->
+        <div id="import-subjects" class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full -translate-y-10 translate-x-10"></div>
+            
+            <div class="relative z-10">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Subjects</h2>
+                        <p class="text-sm text-gray-600">Import course subjects</p>
+                    </div>
+                </div>
+                
+                <!-- Download Template Button -->
+                <div class="mb-4">
+                    <a href="{% url 'download_subject_template' %}" 
+                       class="group relative overflow-hidden w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105 transform border-2 border-transparent hover:border-white/20">
+                        <div class="flex items-center space-x-2 relative z-10">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <span class="font-semibold">Download Template</span>
+                        </div>
+                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
+                    </a>
+                </div>
+                
+                <!-- Upload Form -->
+                <form method="post" action="{% url 'import_subjects' %}" enctype="multipart/form-data" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label for="subject_file" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <span>Excel File</span>
+                            </div>
+                        </label>
+                        <input type="file" 
+                               id="subject_file" 
+                               name="excel_file" 
+                               accept=".xlsx,.xls"
+                               required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-300 bg-white/70 backdrop-blur-sm hover:bg-white">
+                    </div>
+                    
+                    <button type="submit" 
+                            class="group relative w-full overflow-hidden bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105 transform border-2 border-transparent hover:border-white/20">
+                        <div class="flex items-center justify-center space-x-2 relative z-10">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                            </svg>
+                            <span>Import Subjects</span>
+                        </div>
+                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
+                    </button>
+                </form>
+            </div>
+        </div>
+
         <!-- Professors Import -->
-        <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-6 relative overflow-hidden">
+        <div id="import-professors" class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-6 relative overflow-hidden">
             <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-kjsit-red/10 to-kjsit-red-light/10 rounded-full -translate-y-10 translate-x-10"></div>
             
             <div class="relative z-10">
@@ -94,7 +167,7 @@
         </div>
 
         <!-- Students Import -->
-        <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-6 relative overflow-hidden">
+        <div id="import-students" class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-6 relative overflow-hidden">
             <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full -translate-y-10 translate-x-10"></div>
             
             <div class="relative z-10">
@@ -143,6 +216,17 @@
                                required 
                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 bg-white/70 backdrop-blur-sm hover:bg-white">
                     </div>
+
+                    <div class="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
+                        <input type="checkbox" 
+                               id="add_rollno_prefix" 
+                               name="add_rollno_prefix" 
+                               checked
+                               class="w-4 h-4 text-green-600 rounded focus:ring-2 focus:ring-green-500 cursor-pointer">
+                        <label for="add_rollno_prefix" class="text-sm font-medium text-gray-700 cursor-pointer">
+                            Add roll no prefix ({semester}{branch}{division}{rollno})
+                        </label>
+                    </div>
                     
                     <button type="submit" 
                             class="group relative w-full overflow-hidden bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105 transform border-2 border-transparent hover:border-white/20">
@@ -158,73 +242,8 @@
             </div>
         </div>
 
-        <!-- Subjects Import -->
-        <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-6 relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full -translate-y-10 translate-x-10"></div>
-            
-            <div class="relative z-10">
-                <div class="flex items-center space-x-3 mb-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800">Subjects</h2>
-                        <p class="text-sm text-gray-600">Import course subjects</p>
-                    </div>
-                </div>
-                
-                <!-- Download Template Button -->
-                <div class="mb-4">
-                    <a href="{% url 'download_subject_template' %}" 
-                       class="group relative overflow-hidden w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105 transform border-2 border-transparent hover:border-white/20">
-                        <div class="flex items-center space-x-2 relative z-10">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            <span class="font-semibold">Download Template</span>
-                        </div>
-                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
-                    </a>
-                </div>
-                
-                <!-- Upload Form -->
-                <form method="post" action="{% url 'import_subjects' %}" enctype="multipart/form-data" class="space-y-4">
-                    {% csrf_token %}
-                    <div>
-                        <label for="subject_file" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <div class="flex items-center space-x-2">
-                                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                                <span>Excel File</span>
-                            </div>
-                        </label>
-                        <input type="file" 
-                               id="subject_file" 
-                               name="excel_file" 
-                               accept=".xlsx,.xls"
-                               required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-300 bg-white/70 backdrop-blur-sm hover:bg-white">
-                    </div>
-                    
-                    <button type="submit" 
-                            class="group relative w-full overflow-hidden bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105 transform border-2 border-transparent hover:border-white/20">
-                        <div class="flex items-center justify-center space-x-2 relative z-10">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
-                            </svg>
-                            <span>Import Subjects</span>
-                        </div>
-                        <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out"></div>
-                    </button>
-                </form>
-            </div>
-        </div>
-
         <!-- Practical Assignments Import -->
-        <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-6 relative overflow-hidden">
+        <div id="import-practical" class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-6 relative overflow-hidden">
             <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full -translate-y-10 translate-x-10"></div>
             
             <div class="relative z-10">
@@ -289,7 +308,7 @@
         </div>
 
         <!-- Theory Assignments Import -->
-        <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-6 relative overflow-hidden">
+        <div id="import-theory" class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-2xl shadow-2xl border border-kjsit-red/20 p-6 relative overflow-hidden">
             <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-full -translate-y-10 translate-x-10"></div>
             
             <div class="relative z-10">
@@ -354,20 +373,28 @@
         </div>
     </div>
 
-    <!-- Instructions Section -->
-    <div class="mt-8 bg-gradient-to-br from-white via-white to-blue-50 rounded-2xl shadow-xl border border-blue-200 p-6">
-        <div class="flex items-center space-x-3 mb-4">
-            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
+    <!-- Collapsible Instructions Section -->
+    <details class="group mt-8 bg-gradient-to-br from-white via-white to-blue-50 rounded-2xl shadow-xl border border-blue-200 p-6">
+        <summary class="list-none cursor-pointer flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Import Instructions</h2>
+                    <p class="text-sm text-gray-600">Click to expand</p>
+                </div>
             </div>
-            <h2 class="text-2xl font-bold text-gray-800">Import Instructions</h2>
-        </div>
-        
-        <div class="grid gap-6 md:grid-cols-3">
+            <svg class="w-6 h-6 text-blue-600 transition-transform duration-200 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </summary>
+
+        <div class="grid gap-6 md:grid-cols-3 mt-5">
             <div class="space-y-2">
-                <h3 class="font-bold text-kjsit-red mb-2">📋 Before You Start</h3>
+                <h3 class="font-bold text-kjsit-red mb-2">Before You Start</h3>
                 <ul class="text-sm text-gray-600 space-y-1">
                     <li>• Download the template files first</li>
                     <li>• Fill in all required columns</li>
@@ -375,32 +402,30 @@
                     <li>• Ensure data accuracy before importing</li>
                 </ul>
             </div>
-            
+
             <div class="space-y-2">
-                <h3 class="font-bold text-green-600 mb-2">✅ Import Order</h3>
+                <h3 class="font-bold text-green-600 mb-2">Import Order</h3>
                 <ul class="text-sm text-gray-600 space-y-1">
                     <li>• 1. Import Subjects first</li>
                     <li>• 2. Import Professors second</li>
                     <li>• 3. Import Students third</li>
                     <li>• 4. Import Practical Assignments</li>
                     <li>• 5. Import Theory Assignments</li>
-                    <li>• 6. Create divisions/batches manually if needed</li>
+                    <li>• 6. Make divisions/batches manually if needed</li>
                 </ul>
             </div>
-            
+
             <div class="space-y-2">
-                <h3 class="font-bold text-purple-600 mb-2">⚠️ Important Notes</h3>
+                <h3 class="font-bold text-purple-600 mb-2">Important Notes</h3>
                 <ul class="text-sm text-gray-600 space-y-1">
                     <li>• Duplicate entries will be skipped</li>
                     <li>• Invalid data will show error messages</li>
-                    <li>• Check console messages after import</li>
                     <li>• Large files may take time to process</li>
                     <li>• Practical assignments link professors to batches</li>
                     <li>• Theory assignments link professors to divisions</li>
-                    <li>• Both assignment types now require semester information</li>
                 </ul>
             </div>
         </div>
-    </div>
+    </details>
 </div>
 {% endblock %}

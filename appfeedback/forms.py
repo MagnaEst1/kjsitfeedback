@@ -5,7 +5,7 @@ from datetime import timedelta
 from .models import (
     Division, Professor, Subject, PracticalBatch, 
     FeedbackForm, FeedbackQuestion, FeedbackResponse, FeedbackAnswer,
-    TeacherAssignment, PracticalAssignment
+    TeacherAssignment, PracticalAssignment, StoredExport
 )
 
 
@@ -258,6 +258,35 @@ FeedbackAnswerFormSet = forms.modelformset_factory(
     extra=0,
     can_delete=False
 )
+
+
+class StoredExportUploadForm(forms.ModelForm):
+    class Meta:
+        model = StoredExport
+        fields = ['title', 'export_file']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'block w-full border-gray-300 rounded-md shadow-sm focus:ring-kjsit-red focus:border-kjsit-red',
+                'placeholder': 'e.g., Semester 5 Backup - 2025'
+            }),
+            'export_file': forms.ClearableFileInput(attrs={
+                'class': 'block w-full text-sm text-gray-700 border border-gray-300 rounded-md cursor-pointer bg-white focus:outline-none'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['title'].required = True
+        self.fields['export_file'].required = True
+    
+    def clean_export_file(self):
+        file = self.cleaned_data.get('export_file')
+        if file:
+            # 25MB limit
+            max_size = 25 * 1024 * 1024
+            if file.size > max_size:
+                raise forms.ValidationError(f'File size exceeds 25MB limit. Current size: {file.size / (1024 * 1024):.2f}MB')
+        return file
 
 
 class QuickFeedbackFormForm(forms.Form):

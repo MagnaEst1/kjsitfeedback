@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Select Electives - KJSIT Feedback{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto p-3 sm:p-4 lg:p-6 xl:p-8">
+    <!-- Header Card -->
+    <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-xl sm:rounded-2xl shadow-xl sm:shadow-2xl border border-kjsit-red/20 p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-20 h-20 sm:w-32 sm:h-32 bg-gradient-to-br from-kjsit-red/10 to-kjsit-red-light/10 rounded-full -translate-y-10 translate-x-10"></div>
+        
+        <div class="relative z-10">
+            <div class="flex items-center space-x-4 mb-4">
+                <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-kjsit-red via-kjsit-red-light to-kjsit-red/80 rounded-xl flex items-center justify-center shadow-lg">
+                    <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-kjsit-red to-kjsit-red-light bg-clip-text text-transparent">Select Electives</h1>
+                    <p class="text-gray-600 mt-1">Semester {{ student.semester }} Elective Subjects</p>
+                </div>
+            </div>
+            
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-blue-500 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <div>
+                        <p class="text-sm text-blue-700 font-medium">Please select one subject from each elective group below.</p>
+                        <p class="text-xs text-blue-600 mt-1">You can update your selections later if needed.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if electives_by_group %}
+        <!-- Elective Selection Form -->
+        <form method="POST" action="{% url 'select_electives' %}" class="space-y-6">
+            {% csrf_token %}
+            
+            {% for elective_num, subjects in electives_by_group.items %}
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300">
+                    <!-- Elective Header -->
+                    <div class="bg-gradient-to-r from-kjsit-red to-kjsit-red-light p-4">
+                        <h2 class="text-xl font-bold text-white flex items-center">
+                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            Elective {{ elective_num }}
+                        </h2>
+                        <p class="text-white/90 text-sm mt-1">Select one subject from the options below</p>
+                    </div>
+                    
+                    <!-- Subject Options -->
+                    <div class="p-6 space-y-3">
+                        {% for subject in subjects %}
+                            <label class="flex items-start p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:bg-gray-50 hover:border-kjsit-red/50
+                                {% if student_selections|get_item:elective_num == subject.id %}
+                                    border-kjsit-red bg-kjsit-red/5
+                                {% else %}
+                                    border-gray-200
+                                {% endif %}">
+                                <input 
+                                    type="radio" 
+                                    name="elective_{{ elective_num }}" 
+                                    value="{{ subject.id }}" 
+                                    class="mt-1 w-5 h-5 text-kjsit-red focus:ring-kjsit-red"
+                                    {% if student_selections|get_item:elective_num == subject.id %}checked{% endif %}
+                                    required>
+                                <div class="ml-4 flex-grow">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-semibold text-gray-900 text-lg">{{ subject.code }}</span>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                            {% if subject.subject_type == 'theory' %}bg-blue-100 text-blue-800
+                                            {% elif subject.subject_type == 'practical' %}bg-green-100 text-green-800
+                                            {% else %}bg-purple-100 text-purple-800{% endif %}">
+                                            {{ subject.get_subject_type_display }}
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-700 mt-1">{{ subject.name }}</p>
+                                </div>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+            
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 justify-end">
+                <a href="{% url 'dashboard' %}" 
+                   class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all duration-300 text-center">
+                    <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Cancel
+                </a>
+                <button type="submit" 
+                        class="px-6 py-3 bg-gradient-to-r from-kjsit-red to-kjsit-red-light text-white rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300">
+                    <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Save Elective Selections
+                </button>
+            </div>
+        </form>
+    {% else %}
+        <!-- No Electives Available -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8 text-center">
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">No Electives Available</h3>
+            <p class="text-gray-600 mb-6">There are no elective subjects for your current semester.</p>
+            <a href="{% url 'dashboard' %}" 
+               class="inline-flex items-center px-6 py-3 bg-kjsit-red text-white rounded-lg font-semibold hover:bg-kjsit-red-dark transition-all duration-300">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Back to Dashboard
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

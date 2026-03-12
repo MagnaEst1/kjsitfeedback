@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Clear All Data - KJSIT Feedback{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white shadow rounded-lg p-6">
+        <div class="flex items-center mb-6">
+            <div class="flex-shrink-0">
+                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-4">
+                <h1 class="text-2xl font-bold text-gray-900">Clear All Data</h1>
+                <p class="text-sm text-gray-500">This action cannot be undone</p>
+            </div>
+        </div>
+
+        <!-- Warning about what will be deleted -->
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">
+                        Critical Action: This will permanently delete all data
+                    </h3>
+                    <p class="mt-2 text-sm text-red-700">
+                        Before proceeding, all feedback responses will be exported and downloaded. 
+                        Then the following data will be permanently deleted:
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Summary -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-6 space-y-3">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                <span class="text-gray-700"><strong>Feedback Responses to Export:</strong></span>
+                <span class="text-2xl font-bold text-red-600">{{ response_count }}</span>
+            </div>
+            <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                <span class="text-gray-700"><strong>Students to Delete:</strong></span>
+                <span class="text-2xl font-bold text-red-600">{{ student_count }}</span>
+            </div>
+            <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                <span class="text-gray-700"><strong>Subjects to Delete:</strong></span>
+                <span class="text-2xl font-bold text-red-600">{{ subject_count }}</span>
+            </div>
+            <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                <span class="text-gray-700"><strong>Practical Assignments to Delete:</strong></span>
+                <span class="text-2xl font-bold text-red-600">{{ practical_assignment_count }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-700"><strong>Theory Assignments to Delete:</strong></span>
+                <span class="text-2xl font-bold text-red-600">{{ theory_assignment_count }}</span>
+            </div>
+        </div>
+
+        <!-- Important note -->
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-yellow-800">Process:</h3>
+                    <ul class="mt-2 text-sm text-yellow-700 list-disc list-inside space-y-1">
+                        <li>All feedback responses will be exported as a ZIP file</li>
+                        <li>The ZIP file will be automatically downloaded</li>
+                        <li>All specified data will then be permanently deleted</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Form -->
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            <div class="bg-gray-50 rounded-lg p-4 space-y-3">
+                <label class="flex items-start">
+                    <input type="checkbox" id="confirm-delete" class="form-checkbox h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500 mt-1">
+                    <span class="ml-2 text-sm text-gray-700">
+                        I understand that this action will permanently delete all the listed data and cannot be undone
+                    </span>
+                </label>
+            </div>
+            
+            <div class="flex space-x-3">
+                <button type="submit" id="clear-button" disabled
+                        class="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Clear All Data
+                </button>
+                <a href="{% url 'admin_dashboard' %}"
+                   class="flex-1 bg-gray-300 text-gray-800 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition text-center">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Enable submit button when delete confirmation checkbox is checked
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmDelete = document.getElementById('confirm-delete');
+        const clearButton = document.getElementById('clear-button');
+
+        function updateButtonState() {
+            clearButton.disabled = !confirmDelete.checked;
+        }
+
+        confirmDelete.addEventListener('change', updateButtonState);
+    });
+</script>
+{% endblock %}

@@ -5,10 +5,13 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Max, Q, IntegerField
+from django.db.models.functions import Cast
 from django.http import JsonResponse, HttpResponse
 from django.forms import formset_factory
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
+from django.conf import settings
 import pandas as pd
 import openpyxl
 import json
@@ -18,14 +21,16 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.chart import BarChart, PieChart, LineChart, Reference
 from io import BytesIO
+from collections import defaultdict
 from .models import (
     Division, Professor, Subject, PracticalBatch, Student, 
     TeacherAssignment, FeedbackForm, FeedbackQuestion, 
-    FeedbackResponse, FeedbackAnswer, PracticalAssignment
+    FeedbackResponse, FeedbackAnswer, PracticalAssignment,
+    StudentElectiveSelection, StoredExport
 )
 from .forms import (
     FeedbackFormCreationForm, FeedbackQuestionForm, 
-    FeedbackResponseForm, FeedbackAnswerFormSet
+    FeedbackResponseForm, FeedbackAnswerFormSet, StoredExportUploadForm
 )
 
 
@@ -71,26 +76,42 @@ def dashboard_view(request):
         # Get all active feedback forms for this student
         current_time = timezone.now()
         
+        # Get student's selected elective subject IDs
+        selected_elective_subject_ids = StudentElectiveSelection.objects.filter(
+            student=student,
+            semester=student.semester
+        ).values_list('subject_id', flat=True)
+        
         # Theory forms for student's division
+        # Only show forms for non-elective subjects OR elective subjects the student has selected
         theory_forms = FeedbackForm.objects.filter(
             division=student.division,
             subject__subject_type='theory',
+            subject__semester=student.semester,
             is_active=True,
             start_date__lte=current_time,
             end_date__gte=current_time
+        ).filter(
+            Q(subject__elective__isnull=True) |  # Non-elective subjects
+            Q(subject__id__in=selected_elective_subject_ids)  # Selected elective subjects
         ).exclude(
             responses__student=student
         ).select_related('subject', 'professor', 'division')
         
         # Practical and tutorial forms for student's practical batch
+        # Only show forms for non-elective subjects OR elective subjects the student has selected
         practical_tutorial_forms = []
         if student.practical_batch:
             practical_tutorial_forms = FeedbackForm.objects.filter(
                 practical_batch=student.practical_batch,
                 subject__subject_type__in=['practical', 'tutorials'],
+                subject__semester=student.semester,
                 is_active=True,
                 start_date__lte=current_time,
                 end_date__gte=current_time
+            ).filter(
+                Q(subject__elective__isnull=True) |  # Non-elective subjects
+                Q(subject__id__in=selected_elective_subject_ids)  # Selected elective subjects
             ).exclude(
                 responses__student=student
             ).select_related('subject', 'professor', 'division', 'practical_batch')
@@ -103,10 +124,49 @@ def dashboard_view(request):
             student=student
         ).select_related('form__subject', 'form__professor', 'form__division')
         
+        # Check if there are any electives available for the student's semester
+        available_electives = Subject.objects.filter(
+            semester=student.semester,
+            elective__isnull=False
+        ).exists()
+        
+        # Get student's elective selections
+        elective_selections = StudentElectiveSelection.objects.filter(
+            student=student,
+            semester=student.semester
+        ).select_related('subject')
+        
+        # Check if student has completed elective selection
+        electives_completed = True
+        missing_electives = []
+        if available_electives:
+            # Get all unique elective groups for this semester
+            elective_groups = Subject.objects.filter(
+                semester=student.semester,
+                elective__isnull=False
+            ).values_list('elective', flat=True).distinct()
+            
+            # Get selected elective groups
+            selected_groups = set(elective_selections.values_list('elective_group', flat=True))
+            
+            # Check if all elective groups have been selected
+            for group in elective_groups:
+                if group not in selected_groups:
+                    electives_completed = False
+                    missing_electives.append(group)
+        
+        # Only show forms if electives are completed (or not required)
+        show_forms = electives_completed
+        
         context = {
             'student': student,
-            'available_forms': available_forms,
+            'available_forms': available_forms if show_forms else [],
             'completed_forms': completed_forms,
+            'available_electives': available_electives,
+            'elective_selections': elective_selections,
+            'electives_completed': electives_completed,
+            'show_forms': show_forms,
+            'missing_electives': missing_electives,
         }
         
         return render(request, 'dashboard.html', context)
@@ -124,8 +184,130 @@ def dashboard_view(request):
                 return render(request, 'dashboard.html', {'error': True})
 
 
+@login_required
+def select_electives_view(request):
+    """View for students to select their elective subjects"""
+    try:
+        student = Student.objects.get(user=request.user)
+        
+        # Check if student has already completed elective selection
+        # Get all elective groups for the student's semester
+        elective_groups_available = Subject.objects.filter(
+            semester=student.semester,
+            elective__isnull=False
+        ).values_list('elective', flat=True).distinct()
+        
+        # Get student's current selections
+        current_selections = StudentElectiveSelection.objects.filter(
+            student=student,
+            semester=student.semester
+        )
+        
+        selected_groups = set(current_selections.values_list('elective_group', flat=True))
+        all_groups_selected = all(group in selected_groups for group in elective_groups_available)
+        
+        # If all electives are already selected, prevent editing
+        if all_groups_selected and elective_groups_available:
+            messages.info(request, "You have already submitted your elective selections. They cannot be modified.")
+            return redirect('dashboard')
+        
+        # Get all elective groups available for the student's current semester
+        from django.db.models import Count
+        
+        # Get elective groups for the student's semester
+        elective_groups = Subject.objects.filter(
+            semester=student.semester,
+            elective__isnull=False
+        ).values('elective').annotate(
+            subject_count=Count('id')
+        ).order_by('elective')
+        
+        # Get subjects organized by elective group
+        electives_by_group = {}
+        student_selections = {}
+        
+        for group in elective_groups:
+            elective_num = group['elective']
+            subjects = Subject.objects.filter(
+                semester=student.semester,
+                elective=elective_num
+            ).order_by('name')
+            
+            electives_by_group[elective_num] = subjects
+            
+            # Get student's selection for this group if any
+            try:
+                selection = StudentElectiveSelection.objects.get(
+                    student=student,
+                    elective_group=elective_num,
+                    semester=student.semester
+                )
+                student_selections[elective_num] = selection.subject.id
+            except StudentElectiveSelection.DoesNotExist:
+                student_selections[elective_num] = None
+        
+        if request.method == 'POST':
+            # Process elective selections
+            errors = []
+            success_count = 0
+            
+            with transaction.atomic():
+                for elective_num in electives_by_group.keys():
+                    subject_id = request.POST.get(f'elective_{elective_num}')
+                    
+                    if subject_id:
+                        try:
+                            subject = Subject.objects.get(
+                                id=subject_id,
+                                elective=elective_num,
+                                semester=student.semester
+                            )
+                            
+                            # Update or create selection
+                            selection, created = StudentElectiveSelection.objects.update_or_create(
+                                student=student,
+                                elective_group=elective_num,
+                                semester=student.semester,
+                                defaults={'subject': subject}
+                            )
+                            success_count += 1
+                            
+                        except Subject.DoesNotExist:
+                            errors.append(f"Invalid subject selected for Elective {elective_num}")
+                        except Exception as e:
+                            errors.append(f"Error saving Elective {elective_num}: {str(e)}")
+            
+            if errors:
+                for error in errors:
+                    messages.error(request, error)
+            
+            if success_count > 0:
+                messages.success(request, f"Successfully saved {success_count} elective selection(s)!")
+                return redirect('dashboard')
+        
+        context = {
+            'student': student,
+            'electives_by_group': electives_by_group,
+            'student_selections': student_selections,
+        }
+        
+        return render(request, 'select_electives.html', context)
+        
+    except Student.DoesNotExist:
+        messages.error(request, "Only students can select electives.")
+        return redirect('dashboard')
+
+
 def is_admin(user):
     return user.is_staff or user.is_superuser
+
+
+def _archive_export_file(user, title, filename, content_bytes):
+    """Persist generated export bytes in StoredExport archive."""
+    if not content_bytes:
+        return
+    stored_export = StoredExport(title=title, uploaded_by=user)
+    stored_export.export_file.save(filename, ContentFile(content_bytes), save=True)
 
 
 @login_required
@@ -307,8 +489,83 @@ def manage_feedback_forms_view(request):
     
     return render(request, 'manage_feedback_forms.html', {
         'forms': forms,
-        'active_forms_count': active_forms_count
+        'active_forms_count': active_forms_count,
     })
+
+
+@login_required
+@user_passes_test(is_admin)
+def stored_exports_view(request):
+    """Separate page to manage stored export archive."""
+    stored_exports = StoredExport.objects.select_related('uploaded_by').all()
+    upload_form = StoredExportUploadForm()
+    return render(request, 'stored_exports.html', {
+        'stored_exports': stored_exports,
+        'stored_export_upload_form': upload_form,
+    })
+
+
+@login_required
+@user_passes_test(is_admin)
+def upload_stored_export_view(request):
+    """Upload historical export files for admin archive."""
+    if request.method != 'POST':
+        messages.warning(request, "Invalid request method.")
+        return redirect('stored_exports')
+
+    form = StoredExportUploadForm(request.POST, request.FILES)
+    if form.is_valid():
+        stored_export = form.save(commit=False)
+        stored_export.uploaded_by = request.user
+        stored_export.save()
+        messages.success(request, f'Export file "{stored_export.title}" uploaded successfully.')
+    else:
+        messages.error(request, "Upload failed. Please provide a title and a valid file.")
+
+    return redirect('stored_exports')
+
+
+@login_required
+@user_passes_test(is_admin)
+def delete_stored_export_view(request, export_id):
+    """Delete a stored export file from archive."""
+    if request.method != 'POST':
+        messages.warning(request, "Invalid request method.")
+        return redirect('stored_exports')
+
+    stored_export = get_object_or_404(StoredExport, id=export_id)
+    title = stored_export.title
+    if stored_export.export_file:
+        stored_export.export_file.delete(save=False)
+    stored_export.delete()
+    messages.success(request, f'Stored export "{title}" deleted successfully.')
+    return redirect('stored_exports')
+
+
+@login_required
+@user_passes_test(is_admin)
+def update_stored_export_title_view(request, export_id):
+    """Update the title of a stored export archive item."""
+    if request.method != 'POST':
+        messages.warning(request, "Invalid request method.")
+        return redirect('stored_exports')
+
+    stored_export = get_object_or_404(StoredExport, id=export_id)
+    new_title = (request.POST.get('title') or '').strip()
+
+    if not new_title:
+        messages.error(request, "Title cannot be empty.")
+        return redirect('stored_exports')
+
+    if len(new_title) > 255:
+        messages.error(request, "Title is too long (maximum 255 characters).")
+        return redirect('stored_exports')
+
+    old_title = stored_export.title
+    stored_export.title = new_title
+    stored_export.save(update_fields=['title'])
+    messages.success(request, f'Stored export title updated from "{old_title}" to "{new_title}".')
+    return redirect('stored_exports')
 
 
 @login_required
@@ -579,6 +836,18 @@ def fill_feedback_form_view(request, form_id):
         messages.error(request, "You are not eligible to fill this feedback form.")
         return redirect('dashboard')
     
+    # Check if form is for an elective subject and if student has selected it
+    if feedback_form.subject.elective is not None:
+        # This is an elective subject - check if student has selected it
+        elective_selected = StudentElectiveSelection.objects.filter(
+            student=student,
+            subject=feedback_form.subject
+        ).exists()
+        
+        if not elective_selected:
+            messages.error(request, "You can only fill feedback forms for elective subjects you have selected.")
+            return redirect('dashboard')
+    
     questions = feedback_form.questions.all().order_by('order')
     
     if request.method == 'POST':
@@ -616,27 +885,49 @@ def fill_feedback_form_view(request, form_id):
                 try:
                     student = Student.objects.get(user=request.user)
                     
-                    # Get all available forms for this student
-                    available_forms = FeedbackForm.objects.filter(
+                    # Get all available forms for this student (theory and practical/tutorial separately)
+                    # Theory forms for student's division (non-elective)
+                    theory_forms = FeedbackForm.objects.filter(
                         is_active=True,
-                        division=student.division
+                        division=student.division,
+                        subject__subject_type='theory',
+                        subject__elective__isnull=True
                     ).exclude(
-                        # Exclude forms where student has already submitted feedback
                         id__in=FeedbackResponse.objects.filter(student=student).values_list('form_id', flat=True)
                     )
                     
-                    # Filter based on subject type
-                    next_form = None
-                    for form in available_forms:
-                        if form.subject.subject_type == 'theory':
-                            # Theory subjects - just check division
-                            next_form = form
-                            break
-                        elif form.subject.subject_type in ['practical', 'tutorials']:
-                            # Practical/tutorial subjects - check if student's batch matches
-                            if student.practical_batch and form.practical_batch == student.practical_batch:
-                                next_form = form
-                                break
+                    # Practical/tutorial forms for student's batch (non-elective)
+                    practical_forms = FeedbackForm.objects.none()
+                    if student.practical_batch:
+                        practical_forms = FeedbackForm.objects.filter(
+                            is_active=True,
+                            practical_batch=student.practical_batch,
+                            subject__subject_type__in=['practical', 'tutorials'],
+                            subject__elective__isnull=True
+                        ).exclude(
+                            id__in=FeedbackResponse.objects.filter(student=student).values_list('form_id', flat=True)
+                        )
+                    
+                    # Elective forms they've selected
+                    elective_selected_subjects = StudentElectiveSelection.objects.filter(
+                        student=student
+                    ).values_list('subject_id', flat=True)
+                    
+                    elective_forms = FeedbackForm.objects.filter(
+                        subject__id__in=elective_selected_subjects,
+                        is_active=True
+                    ).filter(
+                        Q(subject__subject_type='theory', division=student.division) |
+                        Q(subject__subject_type__in=['practical', 'tutorials'], practical_batch=student.practical_batch)
+                    ).exclude(
+                        id__in=FeedbackResponse.objects.filter(student=student).values_list('form_id', flat=True)
+                    )
+                    
+                    # Combine all available forms
+                    all_available_forms = (theory_forms | practical_forms | elective_forms).distinct()
+                    
+                    # Find the next form to fill
+                    next_form = all_available_forms.first() if all_available_forms.exists() else None
                     
                     if next_form:
                         messages.success(request, f"Feedback submitted successfully! Redirecting to next form: {next_form.title}")
@@ -672,6 +963,7 @@ def feedback_completed_view(request, form_id):
     # Find available feedback forms for this student
     # For theory subjects, match by division only
     # For practical/tutorial subjects, match by division and practical_batch
+    # For elective subjects, check if student has selected them
     available_forms = FeedbackForm.objects.filter(
         is_active=True,
         division=student.division
@@ -680,14 +972,21 @@ def feedback_completed_view(request, form_id):
         id__in=FeedbackResponse.objects.filter(student=student).values_list('form_id', flat=True)
     )
     
-    # Further filter based on subject type
+    # Further filter based on subject type and elective selection
     filtered_forms = []
     for form in available_forms:
-        if form.subject.subject_type == 'theory':
-            # Theory subjects - just check division
+        if form.subject.elective is not None:
+            # Elective subject - check if student has selected it
+            if StudentElectiveSelection.objects.filter(
+                student=student,
+                subject=form.subject
+            ).exists():
+                filtered_forms.append(form)
+        elif form.subject.subject_type == 'theory':
+            # Theory subjects (non-elective) - just check division
             filtered_forms.append(form)
         elif form.subject.subject_type in ['practical', 'tutorials']:
-            # Practical/tutorial subjects - check if student's batch matches
+            # Practical/tutorial subjects (non-elective) - check if student's batch matches
             if student.practical_batch and form.practical_batch == student.practical_batch:
                 filtered_forms.append(form)
     
@@ -744,6 +1043,297 @@ def professor_dashboard_view(request):
     except Professor.DoesNotExist:
         messages.error(request, "Professor profile not found.")
         return redirect('dashboard')
+
+def _get_students_not_filled_data(students_query, include_forms=True):
+    """Compute pending feedback data in bulk to avoid N+1 queries."""
+    students = list(
+        students_query.select_related('division', 'user', 'practical_batch').order_by(
+            'division__year', 'division__name', Cast('roll_number', IntegerField())
+        )
+    )
+
+    if not students:
+        return []
+
+    student_ids = [student.id for student in students]
+    division_ids = {student.division_id for student in students}
+    practical_batch_ids = {student.practical_batch_id for student in students if student.practical_batch_id}
+
+    theory_forms_by_division = defaultdict(list)
+    theory_forms = FeedbackForm.objects.filter(
+        division_id__in=division_ids,
+        subject__subject_type='theory',
+        subject__elective__isnull=True,
+        is_active=True,
+    ).select_related('subject', 'professor', 'division', 'practical_batch')
+    for form in theory_forms:
+        theory_forms_by_division[form.division_id].append(form)
+
+    practical_forms_by_batch = defaultdict(list)
+    if practical_batch_ids:
+        practical_forms = FeedbackForm.objects.filter(
+            practical_batch_id__in=practical_batch_ids,
+            subject__subject_type__in=['practical', 'tutorials'],
+            subject__elective__isnull=True,
+            is_active=True,
+        ).select_related('subject', 'professor', 'division', 'practical_batch')
+        for form in practical_forms:
+            practical_forms_by_batch[form.practical_batch_id].append(form)
+
+    selected_subjects_by_student = defaultdict(set)
+    selected_subject_ids = set()
+    selections = StudentElectiveSelection.objects.filter(
+        student_id__in=student_ids
+    ).values_list('student_id', 'subject_id')
+    for student_id, subject_id in selections:
+        selected_subjects_by_student[student_id].add(subject_id)
+        selected_subject_ids.add(subject_id)
+
+    elective_forms_by_subject = defaultdict(list)
+    if selected_subject_ids:
+        elective_forms = FeedbackForm.objects.filter(
+            subject_id__in=selected_subject_ids,
+            is_active=True,
+        ).select_related('subject', 'professor', 'division', 'practical_batch')
+        for form in elective_forms:
+            elective_forms_by_subject[form.subject_id].append(form)
+
+    filled_forms_by_student = defaultdict(set)
+    filled_pairs = FeedbackResponse.objects.filter(
+        student_id__in=student_ids
+    ).values_list('student_id', 'form_id')
+    for student_id, form_id in filled_pairs:
+        filled_forms_by_student[student_id].add(form_id)
+
+    result = []
+    for student in students:
+        eligible_forms = {}
+
+        for form in theory_forms_by_division.get(student.division_id, []):
+            eligible_forms[form.id] = form
+
+        if student.practical_batch_id:
+            for form in practical_forms_by_batch.get(student.practical_batch_id, []):
+                eligible_forms[form.id] = form
+
+        selected_subjects = selected_subjects_by_student.get(student.id, set())
+        if selected_subjects:
+            for subject_id in selected_subjects:
+                for form in elective_forms_by_subject.get(subject_id, []):
+
+                    if form.subject.subject_type == 'theory' and form.division_id == student.division_id:
+                        eligible_forms[form.id] = form
+                    elif (
+                        form.subject.subject_type in ['practical', 'tutorials']
+                        and student.practical_batch_id
+                        and form.practical_batch_id == student.practical_batch_id
+                    ):
+                        eligible_forms[form.id] = form
+
+        if not eligible_forms:
+            continue
+
+        filled_form_ids = filled_forms_by_student.get(student.id, set())
+        unfilled_forms = [form for form_id, form in eligible_forms.items() if form_id not in filled_form_ids]
+
+        if unfilled_forms:
+            item = {
+                'student': student,
+                'unfilled_forms': len(unfilled_forms),
+                'total_forms': len(eligible_forms),
+            }
+            if include_forms:
+                item['forms'] = sorted(unfilled_forms, key=lambda f: f.title)
+            result.append(item)
+
+    return result
+
+
+@login_required
+@user_passes_test(is_admin)
+def students_not_filled_forms_view(request):
+    """Show students who haven't filled feedback forms filtered by year and division"""
+    # Build year and division filter data using one divisions query
+    years = list(Division.objects.values_list('year', flat=True).distinct().order_by('year'))
+    all_divisions = list(Division.objects.all().order_by('year', 'name'))
+    
+    # Get filter parameters from request
+    selected_year = request.GET.get('year')
+    selected_division = request.GET.get('division')
+    
+    # Build base query for students
+    students_query = Student.objects.all()
+    
+    if selected_year and selected_year.isdigit():
+        students_query = students_query.filter(division__year=int(selected_year))
+    
+    if selected_division and selected_division.isdigit():
+        students_query = students_query.filter(division_id=int(selected_division))
+    
+    students_not_filled = _get_students_not_filled_data(students_query, include_forms=True)
+    
+    context = {
+        'students_not_filled': students_not_filled,
+        'years': years,
+        'all_divisions': all_divisions,
+        'selected_year': selected_year,
+        'selected_division': selected_division,
+    }
+    
+    return render(request, 'students_not_filled_forms.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def export_students_not_filled_forms_view(request):
+    """Export students who haven't filled forms to XLSX or PDF"""
+    if request.method != 'POST':
+        return redirect('students_not_filled')
+    
+    # Get filter parameters from POST request
+    selected_year = request.POST.get('year')
+    selected_division = request.POST.get('division')
+    
+    export_type = request.POST.get('export_type', 'xlsx').lower()
+
+    # Build base query for students
+    students_query = Student.objects.all()
+    
+    if selected_year and selected_year.isdigit():
+        students_query = students_query.filter(division__year=int(selected_year))
+    
+    if selected_division and selected_division.isdigit():
+        students_query = students_query.filter(division_id=int(selected_division))
+    
+    export_rows = []
+    export_data = _get_students_not_filled_data(students_query, include_forms=False)
+    for item in export_data:
+        student = item['student']
+        practical_batch_name = student.practical_batch.name if student.practical_batch else 'N/A'
+        export_rows.append([
+            student.roll_number,
+            student.user.get_full_name(),
+            student.division.name,
+            student.division.get_year_display(),
+            student.semester,
+            practical_batch_name,
+            item['unfilled_forms'],
+            item['total_forms'],
+        ])
+
+    headers = [
+        'Roll Number', 'Student Name', 'Division', 'Year', 'Semester',
+        'Practical Batch', 'Pending Forms Count', 'Total Forms Count'
+    ]
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+
+    if export_type == 'xlsx':
+        wb = Workbook()
+        ws = wb.active
+        ws.title = 'Students Not Filled'
+        ws.append(headers)
+
+        for row in export_rows:
+            ws.append(row)
+
+        for col in range(1, len(headers) + 1):
+            ws.column_dimensions[get_column_letter(col)].width = 22
+
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        filename = f"students_not_filled_forms_{timestamp}.xlsx"
+
+        _archive_export_file(
+            request.user,
+            "Students Not Filled Export (XLSX)",
+            filename,
+            output.getvalue(),
+        )
+
+        response = HttpResponse(
+            output.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = (
+            f'attachment; filename="{filename}"'
+        )
+        return response
+
+    if export_type == 'pdf':
+        try:
+            from reportlab.lib.pagesizes import A4, landscape
+            from reportlab.lib.units import mm
+            from reportlab.pdfgen import canvas
+        except ImportError:
+            messages.error(request, 'PDF export requires reportlab. Install it and try again.')
+            return redirect('students_not_filled')
+
+        output = BytesIO()
+        pdf = canvas.Canvas(output, pagesize=landscape(A4))
+        width, height = landscape(A4)
+
+        title = 'Students Not Filled Forms'
+        pdf.setFont('Helvetica-Bold', 14)
+        pdf.drawString(15 * mm, height - 15 * mm, title)
+        pdf.setFont('Helvetica', 9)
+        pdf.drawString(15 * mm, height - 22 * mm, f'Generated: {timezone.now().strftime("%Y-%m-%d %H:%M")}')
+
+        x_positions = [15, 40, 95, 120, 140, 165, 205, 245]
+        y = height - 32 * mm
+
+        pdf.setFont('Helvetica-Bold', 8)
+        header_labels = ['Roll', 'Student', 'Div', 'Year', 'Sem', 'Batch', 'Pending', 'Total']
+        for i, label in enumerate(header_labels):
+            pdf.drawString(x_positions[i] * mm, y, label)
+
+        y -= 6 * mm
+        pdf.setFont('Helvetica', 8)
+
+        for row in export_rows:
+            if y < 12 * mm:
+                pdf.showPage()
+                y = height - 15 * mm
+                pdf.setFont('Helvetica-Bold', 8)
+                for i, label in enumerate(header_labels):
+                    pdf.drawString(x_positions[i] * mm, y, label)
+                y -= 6 * mm
+                pdf.setFont('Helvetica', 8)
+
+            values = [
+                str(row[0])[:18],
+                str(row[1])[:28],
+                str(row[2])[:8],
+                str(row[3])[:10],
+                str(row[4]),
+                str(row[5])[:14],
+                str(row[6]),
+                str(row[7]),
+            ]
+
+            for i, value in enumerate(values):
+                pdf.drawString(x_positions[i] * mm, y, value)
+            y -= 5 * mm
+
+        pdf.save()
+        output.seek(0)
+        filename = f"students_not_filled_forms_{timestamp}.pdf"
+
+        _archive_export_file(
+            request.user,
+            "Students Not Filled Export (PDF)",
+            filename,
+            output.getvalue(),
+        )
+
+        response = HttpResponse(output.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = (
+            f'attachment; filename="{filename}"'
+        )
+        return response
+
+    messages.error(request, 'Unsupported export type selected.')
+    return redirect('students_not_filled')
 
 
 # AJAX Views for dynamic form population
@@ -979,15 +1569,30 @@ def view_feedback_responses(request, form_id):
     # Get ALL responses for question analysis (not filtered)
     all_responses = FeedbackResponse.objects.filter(form=feedback_form)
     
-    # Calculate eligible students count
-    if feedback_form.practical_batch:
-        # For practical subjects, count students in the specific batch
+    # Calculate eligible students count (including elective-specific eligibility)
+    if feedback_form.subject.elective is not None:
+        # For elective subjects, only students who selected this subject are eligible
+        selected_student_ids = StudentElectiveSelection.objects.filter(
+            subject=feedback_form.subject
+        ).values_list('student_id', flat=True)
+
+        eligible_students = Student.objects.filter(id__in=selected_student_ids)
+
+        # Keep division/batch constraints for the form target audience
+        if feedback_form.division:
+            eligible_students = eligible_students.filter(division=feedback_form.division)
+        if feedback_form.practical_batch:
+            eligible_students = eligible_students.filter(practical_batch=feedback_form.practical_batch)
+
+        eligible_students = eligible_students.distinct()
+    elif feedback_form.practical_batch:
+        # For non-elective practical subjects, count students in the specific batch
         eligible_students = Student.objects.filter(
             division=feedback_form.division,
             practical_batch=feedback_form.practical_batch
         ).distinct()
     else:
-        # For theory subjects, count all students in the division
+        # For non-elective theory subjects, count all students in the division
         eligible_students = Student.objects.filter(division=feedback_form.division)
     
     eligible_students_count = eligible_students.count()
@@ -1134,7 +1739,87 @@ def bulk_delete_responses(request, form_id):
 
 @login_required
 @user_passes_test(is_admin)
-def export_responses(request, form_id):
+def clear_all_responses_view(request):
+    """Export all responses and then delete all feedback responses from all forms."""
+    import zipfile
+    from io import BytesIO
+
+    if not request.user.is_staff:
+        messages.error(request, "You don't have permission to delete responses.")
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        # Get all forms that currently have responses.
+        forms_with_responses = FeedbackForm.objects.filter(
+            responses__isnull=False
+        ).distinct().select_related(
+            'subject', 'professor__user', 'practical_batch', 'division'
+        )
+
+        if not forms_with_responses.exists():
+            messages.warning(request, "No responses found to export or clear.")
+            return redirect('manage_feedback_forms')
+
+        zip_buffer = BytesIO()
+
+        try:
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                # Reuse existing single-form export logic for each form.
+                class MockRequest:
+                    def __init__(self, user):
+                        self.user = user
+
+                mock_request = MockRequest(request.user)
+
+                for form in forms_with_responses:
+                    excel_response = export_responses(mock_request, form.id, archive=False)
+                    excel_content = excel_response.content
+
+                    safe_subject_name = "".join(
+                        c for c in form.subject.name if c.isalnum() or c in (' ', '-', '_')
+                    ).rstrip()
+                    safe_professor_name = "".join(
+                        c for c in form.professor.user.get_full_name() if c.isalnum() or c in (' ', '-', '_')
+                    ).rstrip()
+
+                    filename = (
+                        f"{form.division}/{form.subject.get_subject_type_display()}/"
+                        f"{safe_subject_name}_{safe_professor_name}.xlsx"
+                    )
+                    zipf.writestr(filename, excel_content)
+
+            # Clear responses only after successful export creation.
+            deleted_count = FeedbackResponse.objects.count()
+            FeedbackResponse.objects.all().delete()
+
+            zip_buffer.seek(0)
+            zip_content = zip_buffer.getvalue()
+
+            _archive_export_file(
+                request.user,
+                "Backup Before Clear All Responses",
+                "all_feedback_responses_backup_before_clear.zip",
+                zip_content,
+            )
+
+            response = HttpResponse(zip_content, content_type='application/zip')
+            response['Content-Disposition'] = (
+                'attachment; filename="all_feedback_responses_backup_before_clear.zip"'
+            )
+            return response
+
+        except Exception as e:
+            messages.error(request, f"Error exporting responses. Nothing was deleted: {e}")
+            return redirect('manage_feedback_forms')
+    else:
+        messages.warning(request, "Invalid request method.")
+
+    return redirect('manage_feedback_forms')
+
+
+@login_required
+@user_passes_test(is_admin)
+def export_responses(request, form_id, archive=True):
     """Export feedback responses to XLSX with enhanced format and separate summary sheet"""
     feedback_form = get_object_or_404(FeedbackForm, id=form_id)
     
@@ -1612,7 +2297,16 @@ def export_responses(request, form_id):
         output.getvalue(),
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = f'attachment; filename="feedback_responses_{feedback_form.id}_{feedback_form.title[:20]}.xlsx"'
+    filename = f"feedback_responses_{feedback_form.id}_{feedback_form.title[:20]}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    if archive:
+        _archive_export_file(
+            request.user,
+            f"Form Export: {feedback_form.title}",
+            filename,
+            output.getvalue(),
+        )
     
     return response
 
@@ -1670,7 +2364,7 @@ def export_all_responses(request):
                         mock_request = MockRequest(request.user)
                         
                         # Call the existing export_responses function
-                        excel_response = export_responses(mock_request, form.id)
+                        excel_response = export_responses(mock_request, form.id, archive=False)
                         
                         # Extract Excel content from the response
                         excel_content = excel_response.content
@@ -1688,6 +2382,13 @@ def export_all_responses(request):
         # Read the zip file and create response
         with open(zip_filename, 'rb') as f:
             zip_content = f.read()
+
+        _archive_export_file(
+            request.user,
+            "All Responses Export",
+            "all_feedback_responses.zip",
+            zip_content,
+        )
         
         response = HttpResponse(zip_content, content_type='application/zip')
         response['Content-Disposition'] = 'attachment; filename="all_feedback_responses.zip"'
@@ -1707,6 +2408,152 @@ def export_all_responses(request):
         except:
             pass
 
+
+@login_required
+@user_passes_test(is_admin)
+def clear_data_view(request):
+    """Export all responses and then clear all student data"""
+    import zipfile
+    import tempfile
+    import os
+    from collections import defaultdict
+    
+    if request.method == 'POST':
+        try:
+            # Get all forms with responses for export
+            forms_with_responses = FeedbackForm.objects.filter(
+                responses__isnull=False
+            ).distinct().select_related(
+                'subject', 'professor__user', 'practical_batch'
+            ).prefetch_related('responses')
+            
+            # Create temporary directory and zip file
+            temp_dir = tempfile.mkdtemp()
+            zip_filename = os.path.join(temp_dir, 'all_feedback_responses.zip')
+            
+            # Export all responses to zip
+            if forms_with_responses.exists():
+                with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                    organized_forms = defaultdict(lambda: defaultdict(list))
+                    
+                    for form in forms_with_responses:
+                        division = form.division
+                        subject_type = form.subject.subject_type
+                        organized_forms[division][subject_type].append(form)
+                    
+                    for division, subject_types in organized_forms.items():
+                        for subject_type, forms in subject_types.items():
+                            folder_path = f"{division}/{subject_type.title()}"
+                            
+                            for form in forms:
+                                class MockRequest:
+                                    def __init__(self, user):
+                                        self.user = user
+                                
+                                mock_request = MockRequest(request.user)
+                                excel_response = export_responses(mock_request, form.id, archive=False)
+                                excel_content = excel_response.content
+                                
+                                safe_subject_name = "".join(c for c in form.subject.name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                                safe_professor_name = "".join(c for c in form.professor.user.get_full_name() if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                                
+                                filename = f"{safe_subject_name}_{safe_professor_name}_{form.subject.get_subject_type_display()}.xlsx"
+                                file_path = f"{folder_path}/{filename}"
+                                
+                                zipf.writestr(file_path, excel_content)
+                
+                # Read the zip file
+                with open(zip_filename, 'rb') as f:
+                    zip_content = f.read()
+
+                _archive_export_file(
+                    request.user,
+                    "Backup Before Clear Data",
+                    "all_feedback_responses_before_clear_data.zip",
+                    zip_content,
+                )
+            else:
+                zip_content = None
+            
+            # Delete all data
+            with transaction.atomic():
+                # Get count of deleted items for message
+                student_count = Student.objects.count()
+                subject_count = Subject.objects.count()
+                practical_assignment_count = PracticalAssignment.objects.count()
+                theory_assignment_count = TeacherAssignment.objects.count()
+                
+                # Collect user IDs for students and professors to delete explicitly
+                student_user_ids = list(Student.objects.values_list('user_id', flat=True))
+                professor_user_ids = list(Professor.objects.values_list('user_id', flat=True))
+                
+                # Delete students (cascade will delete associated Users, but we'll be explicit)
+                Student.objects.all().delete()
+                
+                # Delete professors
+                Professor.objects.all().delete()
+                
+                # Explicitly delete user accounts for students and professors
+                if student_user_ids:
+                    User.objects.filter(id__in=student_user_ids).delete()
+                if professor_user_ids:
+                    User.objects.filter(id__in=professor_user_ids).delete()
+                
+                # Delete subjects
+                Subject.objects.all().delete()
+                
+                # Delete practical assignments 
+                PracticalAssignment.objects.all().delete()
+                
+                # Delete theory assignments
+                TeacherAssignment.objects.all().delete()
+                
+                messages.success(
+                    request, 
+                    f'Data cleared successfully! Exported responses first. '
+                    f'Deleted {student_count} students, {subject_count} subjects, '
+                    f'{practical_assignment_count} practical assignments, '
+                    f'{theory_assignment_count} theory assignments.'
+                )
+            
+            # Return zip file if there were responses to export
+            if zip_content:
+                response = HttpResponse(zip_content, content_type='application/zip')
+                response['Content-Disposition'] = 'attachment; filename="all_feedback_responses.zip"'
+                return response
+            else:
+                messages.warning(request, "No responses to export. Data was cleared.")
+                return redirect('admin_dashboard')
+        
+        except Exception as e:
+            messages.error(request, f"Error during data clearing: {str(e)}")
+            return redirect('admin_dashboard')
+        
+        finally:
+            # Clean up temporary files
+            try:
+                if 'temp_dir' in locals() and os.path.exists(temp_dir):
+                    import shutil
+                    shutil.rmtree(temp_dir)
+            except:
+                pass
+    
+    else:
+        # GET request - show confirmation page
+        student_count = Student.objects.count()
+        subject_count = Subject.objects.count()
+        practical_assignment_count = PracticalAssignment.objects.count()
+        theory_assignment_count = TeacherAssignment.objects.count()
+        response_count = FeedbackResponse.objects.count()
+        
+        context = {
+            'student_count': student_count,
+            'subject_count': subject_count,
+            'practical_assignment_count': practical_assignment_count,
+            'theory_assignment_count': theory_assignment_count,
+            'response_count': response_count,
+        }
+        return render(request, 'confirm_clear_data.html', context)
 
 
 @login_required
@@ -1893,7 +2740,12 @@ def bulk_generate_forms_page(request):
     from datetime import timedelta
     
     server_now = timezone.now()
-    one_week_later = server_now + timedelta(weeks=1)
+    # Default end date should be same date/time next year.
+    try:
+        one_year_later = server_now.replace(year=server_now.year + 1)
+    except ValueError:
+        # Handle leap day safely by falling back to 365 days.
+        one_year_later = server_now + timedelta(days=365)
     
     context = {
         'theory_assignments_count': theory_count,
@@ -1901,7 +2753,7 @@ def bulk_generate_forms_page(request):
         'total_assignments': theory_count + practical_count,
         'existing_forms_count': existing_forms,
         'server_start_time': server_now.strftime('%Y-%m-%dT%H:%M'),
-        'server_end_time': one_week_later.strftime('%Y-%m-%dT%H:%M'),
+        'server_end_time': one_year_later.strftime('%Y-%m-%dT%H:%M'),
     }
     
     return render(request, 'bulk_generate_forms.html', context)
@@ -2074,7 +2926,7 @@ def download_subject_template(request):
     
     # Headers
     headers = [
-        'Subject Name', 'Subject Code', 'Subject Type', 'Semester'
+        'Subject Name', 'Subject Code', 'Subject Type', 'Semester','Elective'
     ]
     
     for col, header in enumerate(headers, 1):
@@ -2101,7 +2953,7 @@ def download_subject_template(request):
     instructions = [
         "Instructions for Subjects Import:",
         "",
-        "1. Subject Type: Must be one of: theory, practical, tutorials",
+        "1. Subject Type: Must be one of: theory, practical, tutorials. Elective is allocated group number, eg 1 for all subjects in the first elective group, 2 for second elective, etc. Leave blank if not an elective.",
         "2. Semester: Enter semester number (1-8)",
         "   - Semesters 1-2 = Year 1 (First Year)",
         "   - Semesters 3-4 = Year 2 (Second Year)", 
@@ -2396,6 +3248,7 @@ def import_students(request):
             return redirect('import_data')
         
         file = request.FILES['excel_file']
+        add_prefix = request.POST.get('add_rollno_prefix') == 'on'
         
         if not file.name.endswith(('.xlsx', '.xls')):
             messages.error(request, "Please upload a valid Excel file (.xlsx or .xls).")
@@ -2419,6 +3272,15 @@ def import_students(request):
                 for row_idx, (index, row) in enumerate(df.iterrows()):
                     row_num = row_idx + 2  # Add 2 for Excel row number (1-indexed + header)
                     try:
+                        # Get semester and division values
+                        semester = int(row['Semester'])
+                        division_name = row['Division']
+                        
+                        # Prepare roll number with optional prefix
+                        roll_number = row['Roll Number']
+                        if add_prefix:
+                            roll_number = f"{semester}{settings.BRANCH}{division_name}{row['Roll Number']}"
+                        
                         # Check if user already exists - skip instead of error
                         if User.objects.filter(username=row['Username']).exists():
                             skipped_count += 1
@@ -2428,12 +3290,11 @@ def import_students(request):
                             skipped_count += 1
                             continue
                         
-                        if Student.objects.filter(roll_number=row['Roll Number']).exists():
+                        if Student.objects.filter(roll_number=roll_number).exists():
                             skipped_count += 1
                             continue
                         
-                        # Get semester and calculate year
-                        semester = int(row['Semester'])
+                        # Calculate year from semester
                         calculated_year = ((semester - 1) // 2) + 1
                         
                         # Get or create division
@@ -2464,7 +3325,7 @@ def import_students(request):
                         # Create student
                         Student.objects.create(
                             user=user,
-                            roll_number=row['Roll Number'],
+                            roll_number=roll_number,
                             division=division,
                             practical_batch=practical_batch,
                             semester=semester,
@@ -2520,6 +3381,9 @@ def import_subjects(request):
                 messages.error(request, f"Missing required columns: {', '.join(missing_columns)}")
                 return redirect('import_data')
             
+            # Check if optional 'Elective' column exists
+            has_elective_column = 'Elective' in df.columns
+            
             imported_count = 0
             skipped_count = 0
             errors = []
@@ -2543,12 +3407,25 @@ def import_subjects(request):
                         semester = int(row['Semester'])
                         calculated_year = ((semester - 1) // 2) + 1
                         
+                        # Get elective value if column exists
+                        elective_value = None
+                        if has_elective_column and pd.notna(row['Elective']) and row['Elective'] != '':
+                            try:
+                                elective_value = int(row['Elective'])
+                                if elective_value < 1:
+                                    errors.append(f"Row {row_num}: Elective value must be a positive number")
+                                    continue
+                            except (ValueError, TypeError):
+                                errors.append(f"Row {row_num}: Invalid elective value '{row['Elective']}'. Must be a number.")
+                                continue
+                        
                         # Create subject
                         Subject.objects.create(
                             name=row['Subject Name'],
                             code=row['Subject Code'],
                             subject_type=row['Subject Type'].lower(),
-                            semester=semester
+                            semester=semester,
+                            elective=elective_value
                         )
                         
                         imported_count += 1

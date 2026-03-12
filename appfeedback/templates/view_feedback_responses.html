@@ -15,6 +15,9 @@
                     <span class="bg-kjsit-reRemoved/10 text-kjsit-red px-3 py-1 rounded-full font-medium">{{ form.subject.code }} - {{ form.subject.name }}</span>
                     <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full">{{ form.division }}</span>
                     <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full">{{ form.professor.user.get_full_name }}</span>
+                    {% if form.subject.elective %}
+                        <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-medium">Elective {{ form.subject.elective }}</span>
+                    {% endif %}
                     {% if form.practical_batch %}
                         <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full">{{ form.practical_batch.name }}</span>
                     {% endif %}
@@ -122,6 +125,10 @@
                 <h4 class="text-orange-800 font-medium mb-2">Feedback Form Details:</h4>
                 <div class="text-sm text-orange-700 space-y-1">
                     <p><span class="font-medium">Subject:</span> {{ form.subject.code }} - {{ form.subject.name }}</p>
+                    {% if form.subject.elective %}
+                        <p><span class="font-medium">Elective Group:</span> Elective {{ form.subject.elective }}</p>
+                        <p><span class="font-medium">Eligibility:</span> Only students who selected this elective</p>
+                    {% endif %}
                     <p><span class="font-medium">Division:</span> {{ form.division }}</p>
                     {% if form.practical_batch %}
                         <p><span class="font-medium">Batch:</span> {{ form.practical_batch.name }}</p>

@@ -46,6 +46,7 @@ class Subject(models.Model):
     code = models.CharField(max_length=20, unique=True)
     subject_type = models.CharField(max_length=20, choices=SUBJECT_TYPES)
     semester = models.PositiveIntegerField()
+    elective = models.PositiveIntegerField(null=True, blank=True, help_text="Elective group number (e.g., 1, 2, 3). Leave blank for non-elective subjects.")
     
     class Meta:
         ordering = ['semester', 'name']
@@ -55,8 +56,14 @@ class Subject(models.Model):
         """Calculate year from semester (1-2 = year 1, 3-4 = year 2, etc.)"""
         return ((self.semester - 1) // 2) + 1
     
+    @property
+    def is_elective(self):
+        """Check if this subject is an elective"""
+        return self.elective is not None
+    
     def __str__(self):
-        return f"{self.code} - {self.name} ({self.get_subject_type_display()})"  # type: ignore
+        elective_info = f" [Elective {self.elective}]" if self.is_elective else ""
+        return f"{self.code} - {self.name} ({self.get_subject_type_display()}){elective_info}"  # type: ignore
 
 
 class PracticalBatch(models.Model):
@@ -111,6 +118,33 @@ class Student(models.Model):
     
     def __str__(self):
         return f"{self.roll_number} - {self.user.get_full_name()} (Sem {self.semester}, {self.department})"
+
+
+class StudentElectiveSelection(models.Model):
+    """Track student selections for elective subjects"""
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='elective_selections')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, limit_choices_to={'elective__isnull': False})
+    elective_group = models.PositiveIntegerField(help_text="Elective group number (matches Subject.elective)")
+    semester = models.PositiveIntegerField(help_text="Semester when the elective was chosen")
+    selected_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['student', 'elective_group', 'semester']
+        ordering = ['student', 'semester', 'elective_group']
+    
+    def __str__(self):
+        return f"{self.student.roll_number} - Elective {self.elective_group}: {self.subject.code}"
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        
+        # Validate that the subject's elective field matches the elective_group
+        if self.subject.elective != self.elective_group:
+            raise ValidationError(f"Subject {self.subject.code} does not belong to elective group {self.elective_group}")
+        
+        # Validate that the subject's semester matches the student's semester
+        if self.subject.semester != self.semester:
+            raise ValidationError(f"Subject {self.subject.code} is for semester {self.subject.semester}, not semester {self.semester}")
 
 
 class TeacherAssignment(models.Model):
@@ -243,3 +277,17 @@ class FeedbackAnswer(models.Model):
         elif self.question.question_type == 'checkbox':
             return self.checkbox_answer
         return None
+
+
+class StoredExport(models.Model):
+    """Admin-uploaded archive of previously exported feedback files."""
+    title = models.CharField(max_length=255)
+    export_file = models.FileField(upload_to='stored_exports/%Y/%m/%d/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return self.title

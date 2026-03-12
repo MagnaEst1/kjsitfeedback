@@ -109,7 +109,33 @@
             </div>
         </div>
     {% elif student %}
+        <!-- Elective Selection Requirement -->
+        {% if available_electives and not electives_completed %}
+        <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl sm:rounded-2xl shadow-xl sm:shadow-2xl border-2 border-yellow-400 p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <div class="flex-shrink-0 w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                </div>
+                <div class="flex-grow">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Action Required: Select Your Elective Subjects</h2>
+                    <p class="text-gray-700 mb-4">You must complete your elective subject selection before accessing feedback forms.</p>
+                    <p class="text-sm text-gray-600 mb-4">Please select your elective subjects from the available options to continue.</p>
+                    <a href="{% url 'select_electives' %}" 
+                       class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg font-semibold hover:from-yellow-600 hover:to-orange-600 hover:shadow-lg transform hover:scale-105 transition-all duration-300">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                        Select Electives Now
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
         <!-- Enhanced Available Feedback Forms -->
+        {% if show_forms %}
         <div class="bg-gradient-to-br from-white via-white to-kjsit-red/5 rounded-xl sm:rounded-2xl shadow-xl sm:shadow-2xl border border-kjsit-red/20 p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 relative overflow-hidden">
             <!-- Background decorative elements -->
             <div class="absolute top-0 right-0 w-24 h-24 sm:w-40 sm:h-40 bg-gradient-to-br from-kjsit-red/5 to-kjsit-red-light/5 rounded-full -translate-y-12 translate-x-12 sm:-translate-y-20 sm:translate-x-20"></div>
@@ -277,6 +303,50 @@
                 </div>
             {% endif %}
         </div>
+        
+        <!-- Collapsible Elective Selections (shown after forms) -->
+        {% if elective_selections and electives_completed %}
+        <div class="mt-6 sm:mt-8">
+            <details class="bg-gradient-to-br from-white via-white to-purple-50 rounded-xl sm:rounded-2xl shadow-lg border border-purple-200 overflow-hidden group">
+                <summary class="cursor-pointer p-4 sm:p-6 hover:bg-purple-50/50 transition-colors duration-200 flex items-center justify-between">
+                    <div class="flex items-center space-x-3 sm:space-x-4">
+                        <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg sm:text-xl font-bold text-gray-800">Your Selected Elective Subjects</h3>
+                            <p class="text-sm text-gray-600">Click to view your elective selections</p>
+                        </div>
+                    </div>
+                    <svg class="w-6 h-6 text-purple-600 transform transition-transform duration-200 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </summary>
+                
+                <div class="px-4 pb-4 sm:px-6 sm:pb-6 pt-2">
+                    <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-purple-100">
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {% for selection in elective_selections %}
+                                <div class="flex items-start p-3 bg-purple-50 rounded-lg border border-purple-200 hover:shadow-md transition-shadow duration-200">
+                                    <div class="flex-shrink-0 w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                        {{ selection.elective_group }}
+                                    </div>
+                                    <div class="ml-3 flex-grow">
+                                        <p class="font-semibold text-gray-800 text-sm">{{ selection.subject.code }}</p>
+                                        <p class="text-xs text-gray-600">{{ selection.subject.name }}</p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+        {% endif %}
+        {% endif %}
     {% endif %}
 </div>
 {% endblock %}
