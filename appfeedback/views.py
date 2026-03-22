@@ -16,6 +16,7 @@ import pandas as pd
 import openpyxl
 import json
 import csv
+import re
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -1048,7 +1049,7 @@ def _get_students_not_filled_data(students_query, include_forms=True):
     """Compute pending feedback data in bulk to avoid N+1 queries."""
     students = list(
         students_query.select_related('division', 'user', 'practical_batch').order_by(
-            'division__year', 'division__name', Cast('roll_number', IntegerField())
+            Cast('roll_number', IntegerField())
         )
     )
 
@@ -1146,6 +1147,12 @@ def _get_students_not_filled_data(students_query, include_forms=True):
                 item['forms'] = sorted(unfilled_forms, key=lambda f: f.title)
             result.append(item)
 
+    def _roll_sort_key(item):
+        roll = (item['student'].roll_number or '').strip().lower()
+        parts = re.split(r'(\d+)', roll)
+        return [int(part) if part.isdigit() else part for part in parts]
+
+    result.sort(key=_roll_sort_key)
     return result
 
 

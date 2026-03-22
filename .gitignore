@@ -100,3 +100,4 @@ db.sqlite3
 
 **/staticfiles/
 /media/stored_exports
+/new
