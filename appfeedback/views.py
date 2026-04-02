@@ -1220,6 +1220,7 @@ def export_students_not_filled_forms_view(request):
         export_rows.append([
             student.roll_number,
             student.user.get_full_name(),
+            student.user.email or 'N/A',
             student.division.name,
             student.division.get_year_display(),
             student.semester,
@@ -1229,7 +1230,7 @@ def export_students_not_filled_forms_view(request):
         ])
 
     headers = [
-        'Roll Number', 'Student Name', 'Division', 'Year', 'Semester',
+        'Roll Number', 'Student Name', 'Email', 'Division', 'Year', 'Semester',
         'Practical Batch', 'Pending Forms Count', 'Total Forms Count'
     ]
     timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
@@ -1286,11 +1287,11 @@ def export_students_not_filled_forms_view(request):
         pdf.setFont('Helvetica', 9)
         pdf.drawString(15 * mm, height - 22 * mm, f'Generated: {timezone.now().strftime("%Y-%m-%d %H:%M")}')
 
-        x_positions = [15, 40, 95, 120, 140, 165, 205, 245]
+        x_positions = [10, 28, 72, 128, 149, 166, 185, 214, 244]
         y = height - 32 * mm
 
         pdf.setFont('Helvetica-Bold', 8)
-        header_labels = ['Roll', 'Student', 'Div', 'Year', 'Sem', 'Batch', 'Pending', 'Total']
+        header_labels = ['Roll', 'Student', 'Email', 'Div', 'Year', 'Sem', 'Batch', 'Pending', 'Total']
         for i, label in enumerate(header_labels):
             pdf.drawString(x_positions[i] * mm, y, label)
 
@@ -1310,12 +1311,13 @@ def export_students_not_filled_forms_view(request):
             values = [
                 str(row[0])[:18],
                 str(row[1])[:28],
-                str(row[2])[:8],
-                str(row[3])[:10],
-                str(row[4]),
-                str(row[5])[:14],
-                str(row[6]),
+                str(row[2])[:36],
+                str(row[3])[:8],
+                str(row[4])[:10],
+                str(row[5]),
+                str(row[6])[:12],
                 str(row[7]),
+                str(row[8]),
             ]
 
             for i, value in enumerate(values):
@@ -1326,12 +1328,12 @@ def export_students_not_filled_forms_view(request):
         output.seek(0)
         filename = f"students_not_filled_forms_{timestamp}.pdf"
 
-        _archive_export_file(
-            request.user,
-            "Students Not Filled Export (PDF)",
-            filename,
-            output.getvalue(),
-        )
+        #_archive_export_file(
+        #    request.user,
+        #    "Students Not Filled Export (PDF)",
+        #    filename,
+        #    output.getvalue(),
+        #)
 
         response = HttpResponse(output.getvalue(), content_type='application/pdf')
         response['Content-Disposition'] = (
