@@ -17,17 +17,22 @@ import openpyxl
 import json
 import csv
 import re
+from copy import copy
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.chart import BarChart, PieChart, LineChart, Reference
+from openpyxl.worksheet.pagebreak import Break
+from openpyxl.worksheet.page import PageMargins
+from openpyxl.worksheet.properties import PageSetupProperties
+from openpyxl.drawing.image import Image as XLImage
 from io import BytesIO
 from collections import defaultdict
 from .models import (
     Division, Professor, Subject, PracticalBatch, Student, 
     TeacherAssignment, FeedbackForm, FeedbackQuestion, 
     FeedbackResponse, FeedbackAnswer, PracticalAssignment,
-    StudentElectiveSelection, StoredExport
+    StudentElectiveSelection, StoredExport, UserMailSetup
 )
 from .forms import (
     FeedbackFormCreationForm, FeedbackQuestionForm, 
@@ -487,10 +492,12 @@ def manage_feedback_forms_view(request):
     ).order_by('-created_at')
     
     active_forms_count = forms.filter(is_active=True).count()
+    mail_setup = UserMailSetup.objects.filter(user=request.user).first()
     
     return render(request, 'manage_feedback_forms.html', {
         'forms': forms,
         'active_forms_count': active_forms_count,
+        'mail_setup': mail_setup,
     })
 
 
@@ -1791,10 +1798,16 @@ def clear_all_responses_view(request):
                         c for c in form.professor.user.get_full_name() if c.isalnum() or c in (' ', '-', '_')
                     ).rstrip()
 
-                    filename = (
-                        f"{form.division}/{form.subject.get_subject_type_display()}/"
-                        f"{safe_subject_name}_{safe_professor_name}.xlsx"
-                    )
+                    if form.practical_batch:
+                        filename = (
+                            f"{form.division}/{form.subject.get_subject_type_display()}/"
+                            f"{safe_subject_name}_{safe_professor_name}_{form.practical_batch.name}.xlsx"
+                        )
+                    else:
+                        filename = (
+                            f"{form.division}/{form.subject.get_subject_type_display()}/"
+                            f"{safe_subject_name}_{safe_professor_name}.xlsx"
+                        )
                     zipf.writestr(filename, excel_content)
 
             # Clear responses only after successful export creation.
@@ -1854,6 +1867,69 @@ def export_responses(request, form_id, archive=True):
         top=Side(style='thin'),
         bottom=Side(style='thin')
     )
+
+    def apply_print_layout(worksheet, orientation=None, margins=None):
+        """Use a consistent print layout across all sheets."""
+        worksheet.page_setup.orientation = orientation or worksheet.ORIENTATION_LANDSCAPE
+        worksheet.page_setup.paperSize = worksheet.PAPERSIZE_A4
+        worksheet.page_setup.fitToWidth = 1
+        worksheet.page_setup.fitToHeight = 0
+        margin_values = margins or {
+            "left": 0.25,
+            "right": 0.25,
+            "top": 0.5,
+            "bottom": 0.5,
+            "header": 0.3,
+            "footer": 0.3,
+        }
+        worksheet.page_margins = PageMargins(**margin_values)
+        worksheet.print_options.horizontalCentered = True
+
+        if worksheet.sheet_properties.pageSetUpPr is None:
+            worksheet.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+        else:
+            worksheet.sheet_properties.pageSetUpPr.fitToPage = True
+
+    def write_themed_info_table(ws, info_data, start_row, end_col):
+        """Writes the form details in a themed table layout."""
+        label_fill = PatternFill(start_color="F2D7D5", end_color="F2D7D5", fill_type="solid")
+        label_font = Font(bold=True, color="a50c22", size=10)
+        val_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+        val_font = Font(bold=True, color="333333", size=10)
+        
+        info_border = Border(
+            left=Side(style='thin', color="BFBFBF"),
+            right=Side(style='thin', color="BFBFBF"),
+            top=Side(style='thin', color="BFBFBF"),
+            bottom=Side(style='thin', color="BFBFBF")
+        )
+        
+        row = start_row
+        for label, value in info_data:
+            # Apply formatting/borders to columns B, C, D (2, 3, 4) before merging
+            for col in range(2, 5):
+                c = ws.cell(row=row, column=col)
+                c.fill = label_fill
+                c.border = info_border
+            
+            ws.merge_cells(start_row=row, start_column=2, end_row=row, end_column=4)
+            label_cell = ws.cell(row=row, column=2, value=label)
+            label_cell.font = label_font
+            label_cell.alignment = center_alignment
+            
+            # Apply formatting/borders to columns E to end_col before merging
+            for col in range(5, end_col + 1):
+                c = ws.cell(row=row, column=col)
+                c.fill = val_fill
+                c.border = info_border
+                
+            ws.merge_cells(start_row=row, start_column=5, end_row=row, end_column=end_col)
+            val_cell = ws.cell(row=row, column=5, value=value)
+            val_cell.font = val_font
+            val_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
+            
+            row += 1
+        return row
     
     # Get questions and responses
     questions = feedback_form.questions.all().order_by('order')
@@ -1866,10 +1942,14 @@ def export_responses(request, form_id, archive=True):
     ws1 = wb.active
     ws1.title = "Student Responses"
     current_row = 1
+    response_info_start_col = 2
+    response_info_end_col = max(6, len(questions) + 1)
     
     # Add title and form information
-    ws1.merge_cells(f'A{current_row}:E{current_row}')
-    title_cell = ws1.cell(row=current_row, column=1, value=f"Feedback Response Report")
+    ws1.merge_cells(
+        f'{get_column_letter(response_info_start_col)}{current_row}:{get_column_letter(response_info_end_col)}{current_row}'
+    )
+    title_cell = ws1.cell(row=current_row, column=response_info_start_col, value=f"Feedback Response Report")
     title_cell.font = title_font
     title_cell.fill = title_fill
     title_cell.alignment = center_alignment
@@ -1885,16 +1965,68 @@ def export_responses(request, form_id, archive=True):
         ("Total Responses:", str(total_responses))
     ]
     
-    for label, value in info_data:
-        ws1.cell(row=current_row, column=1, value=label).font = info_font
-        ws1.cell(row=current_row, column=2, value=value)
+    current_row = write_themed_info_table(ws1, info_data, current_row, response_info_end_col)
+    current_row += 1
+
+    # Add question legend so compact Q-headers remain understandable.
+    legend_header_fill = PatternFill(start_color="a50c22", end_color="a50c22", fill_type="solid")
+    legend_header_font = Font(bold=True, color="FFFFFF", size=10)
+    
+    # Legend Header Row: "Q. No." (B-D) and "Question Text" (E-End)
+    for col in range(2, 5):
+        c = ws1.cell(row=current_row, column=col)
+        c.fill = legend_header_fill
+        c.border = thin_border
+    ws1.merge_cells(start_row=current_row, start_column=2, end_row=current_row, end_column=4)
+    lbl_qno = ws1.cell(row=current_row, column=2, value="Q. No.")
+    lbl_qno.font = legend_header_font
+    lbl_qno.alignment = center_alignment
+    
+    for col in range(5, response_info_end_col + 1):
+        c = ws1.cell(row=current_row, column=col)
+        c.fill = legend_header_fill
+        c.border = thin_border
+    ws1.merge_cells(start_row=current_row, start_column=5, end_row=current_row, end_column=response_info_end_col)
+    lbl_text = ws1.cell(row=current_row, column=5, value="Question Text")
+    lbl_text.font = legend_header_font
+    lbl_text.alignment = center_alignment
+    
+    current_row += 1
+
+    # Row styles
+    row_label_fill = PatternFill(start_color="F2D7D5", end_color="F2D7D5", fill_type="solid")
+    row_label_font = Font(bold=True, color="a50c22", size=10)
+    row_val_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+    row_val_font = Font(color="333333", size=10)
+    
+    for question in questions:
+        for col in range(2, 5):
+            c = ws1.cell(row=current_row, column=col)
+            c.fill = row_label_fill
+            c.border = thin_border
+        ws1.merge_cells(start_row=current_row, start_column=2, end_row=current_row, end_column=4)
+        q_cell = ws1.cell(row=current_row, column=2, value=f"Q{question.order}")
+        q_cell.font = row_label_font
+        q_cell.alignment = center_alignment
+        
+        for col in range(5, response_info_end_col + 1):
+            c = ws1.cell(row=current_row, column=col)
+            c.fill = row_val_fill
+            c.border = thin_border
+        ws1.merge_cells(start_row=current_row, start_column=5, end_row=current_row, end_column=response_info_end_col)
+        text_cell = ws1.cell(row=current_row, column=5, value=question.question_text)
+        text_cell.font = row_val_font
+        text_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
+        
         current_row += 1
     
     current_row += 2
     
     # Individual Student Responses section
-    ws1.merge_cells(f'A{current_row}:E{current_row}')
-    section_cell = ws1.cell(row=current_row, column=1, value="Individual Student Responses")
+    ws1.merge_cells(
+        f'{get_column_letter(response_info_start_col)}{current_row}:{get_column_letter(response_info_end_col)}{current_row}'
+    )
+    section_cell = ws1.cell(row=current_row, column=response_info_start_col, value="Individual Student Responses")
     section_cell.font = title_font
     section_cell.fill = title_fill
     section_cell.alignment = center_alignment
@@ -1903,15 +2035,20 @@ def export_responses(request, form_id, archive=True):
     # Create header row for responses
     header = ['Student Roll Number']
     for question in questions:
-        header.append(f"Q{question.order}: {question.question_text}")
+        header.append(f"Q{question.order}")
     
     # Write and style header row
+    responses_header_row = current_row
     for col, header_text in enumerate(header, 1):
         cell = ws1.cell(row=current_row, column=col, value=header_text)
         cell.font = header_font
         cell.fill = header_fill
         cell.alignment = center_alignment
         cell.border = thin_border
+    
+    # Repeat the responses header on every printed page
+    ws1.print_title_rows = f"${responses_header_row}:${responses_header_row}"
+    ws1.freeze_panes = f"A{responses_header_row + 1}"
     
     current_row += 1
     
@@ -1943,41 +2080,178 @@ def export_responses(request, form_id, archive=True):
             cell.alignment = center_alignment
             
         current_row += 1
-    # Auto-adjust column widths for sheet 1
-    for col in range(1, len(header) + 1):
-        ws1.column_dimensions[get_column_letter(col)].width = 25
+        
+    # Add signature of faculty
+    current_row += 3
+    ws1.merge_cells(start_row=current_row, start_column=response_info_end_col - 2, end_row=current_row, end_column=response_info_end_col)
+    sig_line = ws1.cell(row=current_row, column=response_info_end_col - 2, value="_________________________")
+    sig_line.font = Font(bold=True)
+    sig_line.alignment = Alignment(horizontal="center", vertical="center")
+    
+    ws1.merge_cells(start_row=current_row + 1, start_column=response_info_end_col - 2, end_row=current_row + 1, end_column=response_info_end_col)
+    lbl_sig = ws1.cell(row=current_row + 1, column=response_info_end_col - 2, value="Signature of Faculty")
+    lbl_sig.font = Font(bold=True)
+    lbl_sig.alignment = Alignment(horizontal="center", vertical="center")
+    
+    ws1.merge_cells(start_row=current_row + 2, start_column=response_info_end_col - 2, end_row=current_row + 2, end_column=response_info_end_col)
+    lbl_name = ws1.cell(row=current_row + 2, column=response_info_end_col - 2, value=f"({feedback_form.professor.user.get_full_name()})")
+    lbl_name.font = Font(bold=True)
+    lbl_name.alignment = Alignment(horizontal="center", vertical="center")
+    current_row += 3
+
+    # Keep print compact for response sheet.
+    ws1.column_dimensions['A'].width = 16
+    for col in range(2, len(header) + 1):
+        ws1.column_dimensions[get_column_letter(col)].width = 10
+
+    # Exclude student roll number from printout while keeping it in the workbook data.
+    if len(header) > 1:
+        ws1.print_area = f"B1:{get_column_letter(len(header))}{current_row - 1}"
     
     # SHEET 2: Summary Statistics
     ws2 = wb.create_sheet(title="Rating Summary")
     current_row = 1
-    
-    # Title for summary sheet
-    ws2.merge_cells(f'A{current_row}:G{current_row}')
-    title_cell = ws2.cell(row=current_row, column=1, value=f"Rating Statistics Summary")
+    rating_questions = questions.filter(question_type='rating')
+    response_info_end_col_ws2 = max(6, len(rating_questions) + 3)
+
+    # ── LOGO + INSTITUTE HEADER ──────────────────────────────────────────────
+    import os
+    logo_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        'appfeedback', 'static', 'appfeedback', 'images', 'somaiya.png'
+    )
+    if os.path.exists(logo_path):
+        logo_img = XLImage(logo_path)
+        # Size logo to fill column B rows 1-2 so it looks centred in the cell
+        logo_img.height = 80   # pixels
+        logo_img.width  = 80
+        ws2.add_image(logo_img, 'B1')
+        # Row heights: 72pt total ≈ 96px to contain the 80px logo
+        ws2.row_dimensions[1].height = 45
+        ws2.row_dimensions[2].height = 27
+        # Set column B width to match the logo so it stays within the cell
+        ws2.column_dimensions['B'].width = 12   # ~84px
+
+    # Institute name beside the logo (columns C to end)
+    ws2.merge_cells(
+        f'C1:{get_column_letter(response_info_end_col_ws2)}1'
+    )
+    inst_cell = ws2.cell(row=1, column=3,
+                         value="K J Somaiya Institute of Technology")
+    inst_cell.font = Font(bold=True, size=18, color="a50c22", name="Arial")
+    inst_cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    ws2.merge_cells(
+        f'C2:{get_column_letter(response_info_end_col_ws2)}2'
+    )
+    dept_cell = ws2.cell(row=2, column=3,
+                         value="Somaiya Vidyavihar University, Mumbai")
+    dept_cell.font = Font(italic=True, size=11, color="555555", name="Arial")
+    dept_cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    current_row = 4   # gap row after logo/header block
+
+    # ── TITLE ────────────────────────────────────────────────────────────────
+    ws2.merge_cells(f'B{current_row}:{get_column_letter(response_info_end_col_ws2)}{current_row}')
+    title_cell = ws2.cell(row=current_row, column=2, value="Rating Statistics Summary")
     title_cell.font = title_font
     title_cell.fill = title_fill
     title_cell.alignment = center_alignment
     current_row += 2
-    
-    # Add form details
-    for label, value in info_data:
-        ws2.cell(row=current_row, column=1, value=label).font = info_font
-        ws2.cell(row=current_row, column=2, value=value)
+
+    # ── FORM INFO TABLE ───────────────────────────────────────────────────────
+    info_data_ws2 = list(info_data)
+    if rating_questions.exists():
+        max_possible_score = len(rating_questions) * total_responses * 5
+        info_data_ws2.append(
+            ("Max Possible Score:", f"{max_possible_score} (Questions: {len(rating_questions)} × Responses: {total_responses} × Max Rating: 5)")
+        )
+    current_row = write_themed_info_table(ws2, info_data_ws2, current_row, response_info_end_col_ws2)
+    current_row += 1
+
+    # ── OVERALL SUMMARY BOX (shown right after the info table) ────────────────
+    if rating_questions.exists():
+        # Calculate overall stats needed for the summary box
+        _overall_score = 0
+        _overall_max   = len(rating_questions) * total_responses * 5
+        _total_rating_count = 0
+        _total_weighted     = 0
+        for _q in rating_questions:
+            _q_answers = FeedbackAnswer.objects.filter(
+                question=_q, response__form=feedback_form
+            )
+            for _a in _q_answers:
+                if _a.rating_answer:
+                    _total_weighted     += _a.rating_answer
+                    _total_rating_count += 1
+            for _r in range(1, 6):
+                _cnt = _q_answers.filter(rating_answer=_r).count()
+                _overall_score += _r * _cnt
+
+        _overall_pct = round((_overall_score / _overall_max * 100), 2) if _overall_max > 0 else 0
+        _overall_avg = round(_total_weighted / _total_rating_count, 2) if _total_rating_count > 0 else 0
+
+        # Box border style
+        box_border = Border(
+            left=Side(style='medium', color="a50c22"),
+            right=Side(style='medium', color="a50c22"),
+            top=Side(style='medium', color="a50c22"),
+            bottom=Side(style='medium', color="a50c22")
+        )
+        box_fill_left  = PatternFill(start_color="FFF0F0", end_color="FFF0F0", fill_type="solid")
+        box_fill_right = PatternFill(start_color="F0F0FF", end_color="F0F0FF", fill_type="solid")
+        mid_col = response_info_end_col_ws2 // 2 + 1   # split point between two halves
+
+        # Row 1 of box: labels
+        lbl_end_col_left  = mid_col - 1
+        lbl_start_col_right = mid_col
+        lbl_end_col_right = response_info_end_col_ws2
+
+        for col in range(2, lbl_end_col_left + 1):
+            ws2.cell(row=current_row, column=col).fill   = box_fill_left
+            ws2.cell(row=current_row, column=col).border = box_border
+        ws2.merge_cells(start_row=current_row, start_column=2,
+                        end_row=current_row,   end_column=lbl_end_col_left)
+        lbl1 = ws2.cell(row=current_row, column=2, value="Overall Percentage (%)")
+        lbl1.font      = Font(bold=True, size=11, color="a50c22")
+        lbl1.alignment = center_alignment
+
+        for col in range(lbl_start_col_right, lbl_end_col_right + 1):
+            ws2.cell(row=current_row, column=col).fill   = box_fill_right
+            ws2.cell(row=current_row, column=col).border = box_border
+        ws2.merge_cells(start_row=current_row, start_column=lbl_start_col_right,
+                        end_row=current_row,   end_column=lbl_end_col_right)
+        lbl2 = ws2.cell(row=current_row, column=lbl_start_col_right,
+                        value="Overall Average Rating")
+        lbl2.font      = Font(bold=True, size=11, color="003399")
+        lbl2.alignment = center_alignment
         current_row += 1
-    
-    current_row += 2
-    
-    # Process rating questions for statistics
-    rating_questions = questions.filter(question_type='rating')
+
+        # Row 2 of box: values
+        for col in range(2, lbl_end_col_left + 1):
+            ws2.cell(row=current_row, column=col).fill   = box_fill_left
+            ws2.cell(row=current_row, column=col).border = box_border
+        ws2.merge_cells(start_row=current_row, start_column=2,
+                        end_row=current_row,   end_column=lbl_end_col_left)
+        val1 = ws2.cell(row=current_row, column=2, value=f"{_overall_pct}%")
+        val1.font      = Font(bold=True, size=20, color="a50c22")
+        val1.alignment = center_alignment
+        ws2.row_dimensions[current_row].height = 30
+
+        for col in range(lbl_start_col_right, lbl_end_col_right + 1):
+            ws2.cell(row=current_row, column=col).fill   = box_fill_right
+            ws2.cell(row=current_row, column=col).border = box_border
+        ws2.merge_cells(start_row=current_row, start_column=lbl_start_col_right,
+                        end_row=current_row,   end_column=lbl_end_col_right)
+        val2 = ws2.cell(row=current_row, column=lbl_start_col_right,
+                        value=f"{_overall_avg} / 5")
+        val2.font      = Font(bold=True, size=20, color="003399")
+        val2.alignment = center_alignment
+        current_row += 2   # gap before detailed table
+    # ─────────────────────────────────────────────────────────────────────────
+
     
     if rating_questions.exists():
-        # Calculate max possible score
-        max_possible_score = len(rating_questions) * total_responses * 5
-        
-        # Add max score info
-        ws2.cell(row=current_row, column=1, value="Max Possible Score:").font = info_font
-        ws2.cell(row=current_row, column=2, value=f"{max_possible_score} (Questions: {len(rating_questions)} × Responses: {total_responses} × Max Rating: 5)")
-        current_row += 3
         
         # Create statistics table with ratings as rows and questions as columns
         # Header row: Rating | Q1 | Q2 | Q3 | ... | Total
@@ -1986,8 +2260,8 @@ def export_responses(request, form_id, archive=True):
             header_row.append(f"Q{question.order}")
         header_row.append('Total')
         
-        # Write header
-        for col, header_text in enumerate(header_row, 1):
+        # Write header (shifted 1 column to the right, starting at col 2)
+        for col, header_text in enumerate(header_row, 2):
             cell = ws2.cell(row=current_row, column=col, value=header_text)
             cell.font = stats_font
             cell.fill = stats_fill
@@ -2015,7 +2289,7 @@ def export_responses(request, form_id, archive=True):
                 rating_data[rating][question.id] = count
                 question_totals[question.id] += count
         
-        # Write rating rows (1-5)
+        # Write rating rows (1-5) (shifted 1 column to the right, starting at col 2)
         for rating in range(1, 6):
             row_data = [f"Rating {rating}"]
             row_total = 0
@@ -2028,24 +2302,24 @@ def export_responses(request, form_id, archive=True):
             row_data.append(row_total)
             
             # Write row
-            for col, value in enumerate(row_data, 1):
+            for col, value in enumerate(row_data, 2):
                 cell = ws2.cell(row=current_row, column=col, value=value)
                 cell.border = thin_border
                 cell.alignment = center_alignment
             
             current_row += 1
         
-        # Add total row
-        total_row = ['Total']
+        # Add total row (shifted 1 column to the right, starting at col 2)
+        total_row_data = ['Total']
         grand_total = 0
         for question in rating_questions:
             total = question_totals[question.id]
-            total_row.append(total)
+            total_row_data.append(total)
             grand_total += total
-        total_row.append(grand_total)
+        total_row_data.append(grand_total)
         
         # Write total row with bold font
-        for col, value in enumerate(total_row, 1):
+        for col, value in enumerate(total_row_data, 2):
             cell = ws2.cell(row=current_row, column=col, value=value)
             cell.font = Font(bold=True)
             cell.border = thin_border
@@ -2053,7 +2327,7 @@ def export_responses(request, form_id, archive=True):
         
         current_row += 1
         
-        # Add weighted score row (rating × count)
+        # Add weighted score row (rating × count) (shifted 1 column to the right, starting at col 2)
         score_row = ['Weighted Score']
         grand_score = 0
         for question in rating_questions:
@@ -2066,7 +2340,7 @@ def export_responses(request, form_id, archive=True):
         score_row.append(grand_score)
         
         # Write weighted score row with bold font and different color
-        for col, value in enumerate(score_row, 1):
+        for col, value in enumerate(score_row, 2):
             cell = ws2.cell(row=current_row, column=col, value=value)
             cell.font = Font(bold=True, color="FFFFFF")
             cell.fill = PatternFill(start_color="FF6600", end_color="FF6600", fill_type="solid")
@@ -2075,30 +2349,34 @@ def export_responses(request, form_id, archive=True):
         
         current_row += 1
         
-        # Add percentage row (weighted_score / max_possible_score * 100) - Total only
-        percentage_row = ['Overall Percentage (%)']
+        # Add percentage row (weighted_score / max_possible_score * 100) - Total only (shifted 1 column to the right, starting at col 2)
         overall_max_score = len(rating_questions) * total_responses * 5
-        
-        # Add empty cells for individual question columns
-        for question in rating_questions:
-            percentage_row.append('')
-        
-        # Calculate and add overall percentage
         overall_percentage = round((grand_score / overall_max_score * 100), 2) if overall_max_score > 0 else 0
-        percentage_row.append(f"{overall_percentage}%")
         
-        # Write percentage row with bold font and purple color
-        for col, value in enumerate(percentage_row, 1):
-            cell = ws2.cell(row=current_row, column=col, value=value)
-            cell.font = Font(bold=True, color="FFFFFF")
-            cell.fill = PatternFill(start_color="9966CC", end_color="9966CC", fill_type="solid")
-            cell.border = thin_border
-            cell.alignment = center_alignment
+        percent_fill = PatternFill(start_color="9966CC", end_color="9966CC", fill_type="solid")
+        percent_font = Font(bold=True, color="FFFFFF")
+        
+        # Format whole row (borders & fill)
+        for col in range(2, len(rating_questions) + 4):
+            c = ws2.cell(row=current_row, column=col)
+            c.fill = percent_fill
+            c.border = thin_border
+            
+        # Merge label columns B to len(rating_questions)+2
+        ws2.merge_cells(start_row=current_row, start_column=2, end_row=current_row, end_column=len(rating_questions) + 2)
+        lbl_cell = ws2.cell(row=current_row, column=2, value="Overall Percentage (%)")
+        lbl_cell.font = percent_font
+        lbl_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
+        
+        # Write percentage value in the last column
+        val_cell = ws2.cell(row=current_row, column=len(rating_questions) + 3, value=f"{overall_percentage}%")
+        val_cell.font = percent_font
+        val_cell.alignment = center_alignment
         
         current_row += 3
         
-        # Add average rating calculation
-        ws2.cell(row=current_row, column=1, value="Average Ratings:").font = info_font
+        # Add average rating calculation (shifted 1 column to the right)
+        ws2.cell(row=current_row, column=2, value="Average Ratings:").font = info_font
         current_row += 1
         
         avg_header = ['Question']
@@ -2106,8 +2384,8 @@ def export_responses(request, form_id, archive=True):
             avg_header.append(f"Q{question.order}")
         avg_header.append('Overall Avg')
         
-        # Write average header
-        for col, header_text in enumerate(avg_header, 1):
+        # Write average header (shifted 1 column to the right, starting at col 2)
+        for col, header_text in enumerate(avg_header, 2):
             cell = ws2.cell(row=current_row, column=col, value=header_text)
             cell.font = header_font
             cell.fill = header_fill
@@ -2141,28 +2419,78 @@ def export_responses(request, form_id, archive=True):
         overall_avg = round(total_avg / valid_questions, 2) if valid_questions > 0 else 0
         avg_row.append(overall_avg)
         
-        # Write average row
-        for col, value in enumerate(avg_row, 1):
+        # Write average row (shifted 1 column to the right, starting at col 2)
+        for col, value in enumerate(avg_row, 2):
             cell = ws2.cell(row=current_row, column=col, value=value)
             cell.font = Font(bold=True)
             cell.border = thin_border
             cell.alignment = center_alignment
+        current_row += 1
         
     else:
-        # No rating questions message
-        ws2.cell(row=current_row, column=1, value="No rating questions found in this form.")
+        # No rating questions message (shifted 1 column to the right)
+        ws2.cell(row=current_row, column=2, value="No rating questions found in this form.")
+        current_row += 1
     
-    # Auto-adjust column widths for sheet 2
-    for col in range(1, len(rating_questions) + 3):
-        ws2.column_dimensions[get_column_letter(col)].width = 15
+    # Auto-fit columns B onwards — skip top-left cells of multi-column merges
+    # so long merged text (e.g. Max Possible Score) does not inflate column E/H.
+    multi_col_merge_origins = set()
+    for mr in ws2.merged_cells.ranges:
+        if mr.max_col > mr.min_col:   # spans more than 1 column
+            multi_col_merge_origins.add((mr.min_row, mr.min_col))
+
+    ws2.column_dimensions['A'].width = 16
+    for col in range(2, len(rating_questions) + 4):
+        max_len = 0
+        for row in range(1, current_row):
+            if (row, col) in multi_col_merge_origins:
+                continue   # skip: text spreads across multiple columns
+            val = ws2.cell(row=row, column=col).value
+            if val is not None:
+                max_len = max(max_len, len(str(val)))
+        ws2.column_dimensions[get_column_letter(col)].width = max(6, min(max_len + 2, 25))
+
+    # Set print area for ws2
+    num_cols_ws2 = max(6, len(rating_questions) + 3)
+
+    # Add signature of faculty
+    current_row += 3
+    ws2.merge_cells(start_row=current_row, start_column=num_cols_ws2 - 2, end_row=current_row, end_column=num_cols_ws2)
+    sig_line = ws2.cell(row=current_row, column=num_cols_ws2 - 2, value="_________________________")
+    sig_line.font = Font(bold=True)
+    sig_line.alignment = Alignment(horizontal="center", vertical="center")
+    
+    ws2.merge_cells(start_row=current_row + 1, start_column=num_cols_ws2 - 2, end_row=current_row + 1, end_column=num_cols_ws2)
+    lbl_sig = ws2.cell(row=current_row + 1, column=num_cols_ws2 - 2, value="Signature of Faculty")
+    lbl_sig.font = Font(bold=True)
+    lbl_sig.alignment = Alignment(horizontal="center", vertical="center")
+    
+    ws2.merge_cells(start_row=current_row + 2, start_column=num_cols_ws2 - 2, end_row=current_row + 2, end_column=num_cols_ws2)
+    lbl_name = ws2.cell(row=current_row + 2, column=num_cols_ws2 - 2, value=f"({feedback_form.professor.user.get_full_name()})")
+    lbl_name.font = Font(bold=True)
+    lbl_name.alignment = Alignment(horizontal="center", vertical="center")
+    current_row += 3
+
+    ws2.print_area = f"B1:{get_column_letter(num_cols_ws2)}{current_row - 1}"
     
     # SHEET 3: Individual Question Rating Charts
     if rating_questions.exists():
         ws3 = wb.create_sheet(title="Question Rating Charts")
         current_row = 1
+
+        ws3.sheet_view.zoomScale = 105
+        ws3.freeze_panes = "A4"
+        ws3.page_setup.fitToPage = True
+        ws3.page_setup.fitToWidth = 1
+        ws3.page_setup.fitToHeight = 0
+        ws3.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+        ws3.print_title_rows = "$1:$3"
+
+        for column, width in {"A": 18, "B": 14, "C": 14, "D": 4, "E": 16, "F": 16, "G": 16, "H": 16}.items():
+            ws3.column_dimensions[column].width = width
         
         # Title for charts sheet
-        ws3.merge_cells(f'A{current_row}:H{current_row}')
+        ws3.merge_cells(f'A{current_row}:G{current_row}')
         title_cell = ws3.cell(row=current_row, column=1, value="Individual Question Rating Distribution")
         title_cell.font = title_font
         title_cell.fill = title_fill
@@ -2171,27 +2499,34 @@ def export_responses(request, form_id, archive=True):
         
         # Create individual pie charts for each question
         chart_row = current_row
+        chart_block_height = 15
+        questions_per_page = 3
         
         for i, question in enumerate(rating_questions):
-            # Calculate position for charts (2 charts per row)
-            col_offset = (i % 2) * 8 + 1  # Charts at columns A and I
-            row_offset = (i // 2) * 20    # New row every 2 charts
-            
-            data_start_row = chart_row + row_offset
-            data_col = col_offset
+            # Give each question its own vertical block to avoid chart overlap.
+            data_start_row = chart_row + (i * chart_block_height)
+            data_col = 1
+
+            # Start each new 3-question group on a fresh printed page.
+            if i > 0 and i % questions_per_page == 0:
+                ws3.row_breaks.append(Break(id=data_start_row - 1))
             
             # Question title
             question_title = f"Q{question.order}: {question.question_text[:40]}..."
-            ws3.merge_cells(f'{get_column_letter(data_col)}{data_start_row}:{get_column_letter(data_col + 2)}{data_start_row}')
+            ws3.merge_cells(f'A{data_start_row}:G{data_start_row}')
             title_cell = ws3.cell(row=data_start_row, column=data_col, value=question_title)
-            title_cell.font = Font(bold=True, size=12)
+            title_cell.font = Font(bold=True, size=14, color="FFFFFF")
+            title_cell.fill = title_fill
             title_cell.alignment = center_alignment
             
             # Data table headers
             data_start_row += 2
-            ws3.cell(row=data_start_row, column=data_col, value="Rating").font = header_font
-            ws3.cell(row=data_start_row, column=data_col + 1, value="Students").font = header_font
-            ws3.cell(row=data_start_row, column=data_col + 2, value="Percentage").font = header_font
+            for col, text in enumerate(["Rating", "Students", "Percentage"], 1):
+                cell = ws3.cell(row=data_start_row, column=col, value=text)
+                cell.font = Font(bold=True, size=12, color="FFFFFF")
+                cell.fill = header_fill
+                cell.alignment = center_alignment
+                cell.border = thin_border
             
             # Get total responses for this question
             question_total = 0
@@ -2208,15 +2543,25 @@ def export_responses(request, form_id, archive=True):
                 percentage = round((count / question_total * 100), 1) if question_total > 0 else 0
                 
                 row = data_rows_start + rating - 1
-                ws3.cell(row=row, column=data_col, value=f"Rating {rating}")
-                ws3.cell(row=row, column=data_col + 1, value=count)
-                ws3.cell(row=row, column=data_col + 2, value=f"{percentage}%")
+                ws3.cell(row=row, column=1, value=f"Rating {rating}")
+                ws3.cell(row=row, column=2, value=count)
+                ws3.cell(row=row, column=3, value=f"{percentage}%")
+                for col in range(1, 4):
+                    data_cell = ws3.cell(row=row, column=col)
+                    data_cell.font = Font(size=12)
+                    data_cell.border = thin_border
+                    data_cell.alignment = center_alignment
             
             # Add total row
             total_row = data_rows_start + 5
-            ws3.cell(row=total_row, column=data_col, value="Total").font = Font(bold=True)
-            ws3.cell(row=total_row, column=data_col + 1, value=question_total).font = Font(bold=True)
-            ws3.cell(row=total_row, column=data_col + 2, value="100.0%").font = Font(bold=True)
+            ws3.cell(row=total_row, column=1, value="Total").font = Font(bold=True, size=12, color="FFFFFF")
+            ws3.cell(row=total_row, column=2, value=question_total).font = Font(bold=True, size=12, color="FFFFFF")
+            ws3.cell(row=total_row, column=3, value="100.0%").font = Font(bold=True, size=12, color="FFFFFF")
+            for col in range(1, 4):
+                total_cell = ws3.cell(row=total_row, column=col)
+                total_cell.fill = stats_fill
+                total_cell.border = thin_border
+                total_cell.alignment = center_alignment
             
             # Create pie chart for this question
             question_pie_chart = PieChart()
@@ -2228,19 +2573,21 @@ def export_responses(request, form_id, archive=True):
             
             question_pie_chart.add_data(data, titles_from_data=True)
             question_pie_chart.set_categories(labels)
-            question_pie_chart.height = 10
-            question_pie_chart.width = 12
+            question_pie_chart.height = 5.5
+            question_pie_chart.width = 7.75
             
-            # Position chart next to the data
-            chart_cell = f"{get_column_letter(data_col + 4)}{data_start_row - 1}"
+            # Position chart beside the table and total row.
+            chart_cell = f"E{data_start_row}"
             ws3.add_chart(question_pie_chart, chart_cell)
-        
+
+
         # Calculate next available row for summary section
-        num_chart_rows = ((len(rating_questions) - 1) // 2 + 1) * 20
+        num_chart_rows = len(rating_questions) * chart_block_height
         summary_start_row = chart_row + num_chart_rows + 5
+        ws3.row_breaks.append(Break(id=summary_start_row - 1))
         
         # Overall Summary Section
-        ws3.merge_cells(f'A{summary_start_row}:H{summary_start_row}')
+        ws3.merge_cells(f'A{summary_start_row}:G{summary_start_row}')
         summary_title = ws3.cell(row=summary_start_row, column=1, value="Overall Rating Summary")
         summary_title.font = title_font
         summary_title.fill = title_fill
@@ -2248,10 +2595,12 @@ def export_responses(request, form_id, archive=True):
         summary_start_row += 3
         
         # Overall statistics table
-        ws3.cell(row=summary_start_row, column=1, value="Rating").font = header_font
-        ws3.cell(row=summary_start_row, column=2, value="Total Students").font = header_font
-        ws3.cell(row=summary_start_row, column=3, value="Across All Questions").font = header_font
-        ws3.cell(row=summary_start_row, column=4, value="Percentage").font = header_font
+        for col, text in enumerate(["Rating", "Total Students", "Across All Questions", "Percentage"], 1):
+            cell = ws3.cell(row=summary_start_row, column=col, value=text)
+            cell.font = Font(bold=True, size=12, color="FFFFFF")
+            cell.fill = header_fill
+            cell.alignment = center_alignment
+            cell.border = thin_border
         
         # Calculate overall statistics
         overall_total = 0
@@ -2273,13 +2622,32 @@ def export_responses(request, form_id, archive=True):
             ws3.cell(row=row, column=2, value=count)
             ws3.cell(row=row, column=3, value=f"Out of {overall_total} total responses")
             ws3.cell(row=row, column=4, value=f"{percentage}%")
+            for col in range(1, 5):
+                data_cell = ws3.cell(row=row, column=col)
+                data_cell.font = Font(size=12)
+                data_cell.border = thin_border
+                data_cell.alignment = center_alignment
         
         # Add overall total
         total_row = summary_start_row + 6
-        ws3.cell(row=total_row, column=1, value="Total").font = Font(bold=True)
-        ws3.cell(row=total_row, column=2, value=overall_total).font = Font(bold=True)
-        ws3.cell(row=total_row, column=3, value=f"{len(rating_questions)} questions × {total_responses} responses").font = Font(bold=True)
-        ws3.cell(row=total_row, column=4, value="100.0%").font = Font(bold=True)
+        ws3.cell(row=total_row, column=1, value="Total").font = Font(bold=True, size=12, color="FFFFFF")
+        ws3.cell(row=total_row, column=2, value=overall_total).font = Font(bold=True, size=12, color="FFFFFF")
+        ws3.cell(row=total_row, column=3, value=f"{len(rating_questions)} questions × {total_responses} responses").font = Font(bold=True, size=12, color="FFFFFF")
+        ws3.cell(row=total_row, column=4, value="100.0%").font = Font(bold=True, size=12, color="FFFFFF")
+        for col in range(1, 5):
+            total_cell = ws3.cell(row=total_row, column=col)
+            total_cell.fill = stats_fill
+            total_cell.border = thin_border
+            total_cell.alignment = center_alignment
+
+        # Auto-fit Overall Rating Summary table columns based on content.
+        for col in range(1, 5):
+            max_length = 0
+            for row in range(summary_start_row, total_row + 1):
+                cell_value = ws3.cell(row=row, column=col).value
+                if cell_value is not None:
+                    max_length = max(max_length, len(str(cell_value)))
+            ws3.column_dimensions[get_column_letter(col)].width = max(12, min(max_length + 2, 42))
         
         # Create overall pie chart
         overall_pie_chart = PieChart()
@@ -2291,13 +2659,55 @@ def export_responses(request, form_id, archive=True):
         
         overall_pie_chart.add_data(overall_data, titles_from_data=True)
         overall_pie_chart.set_categories(overall_labels)
-        overall_pie_chart.height = 12
-        overall_pie_chart.width = 15
+        overall_pie_chart.height = 7.5
+        overall_pie_chart.width = 15.75
         
-        # Add overall chart
-        ws3.add_chart(overall_pie_chart, f"F{summary_start_row}")
+        # Add overall chart below the summary table (total_row is summary_start_row + 6)
+        ws3.add_chart(overall_pie_chart, f"B{summary_start_row+11}")
+
+        # Add signature of faculty below the overall chart
+        # Chart starts at summary_start_row+8, height=12cm (~19 rows), so signature at +30
+        ws3_sig_row = summary_start_row + 30
+        ws3.merge_cells(start_row=ws3_sig_row, start_column=5, end_row=ws3_sig_row, end_column=7)
+        sig_line = ws3.cell(row=ws3_sig_row, column=5, value="_________________________")
+        sig_line.font = Font(bold=True)
+        sig_line.alignment = Alignment(horizontal="center", vertical="center")
+        
+        ws3.merge_cells(start_row=ws3_sig_row + 1, start_column=5, end_row=ws3_sig_row + 1, end_column=7)
+        lbl_sig = ws3.cell(row=ws3_sig_row + 1, column=5, value="Signature of Faculty")
+        lbl_sig.font = Font(bold=True)
+        lbl_sig.alignment = Alignment(horizontal="center", vertical="center")
+        
+        ws3.merge_cells(start_row=ws3_sig_row + 2, start_column=5, end_row=ws3_sig_row + 2, end_column=7)
+        lbl_name = ws3.cell(row=ws3_sig_row + 2, column=5, value=f"({feedback_form.professor.user.get_full_name()})")
+        lbl_name.font = Font(bold=True)
+        lbl_name.alignment = Alignment(horizontal="center", vertical="center")
+
+        # Restrict print area to column G
+        ws3.print_area = f"A1:G{ws3_sig_row + 2}"
+
+    # Ensure the response sheets print in landscape while the rating summary and chart sheets print in portrait.
+    for worksheet in wb.worksheets:
+        if worksheet.title == "Question Rating Charts":
+            apply_print_layout(
+                worksheet,
+                worksheet.ORIENTATION_PORTRAIT,
+                {
+                    "left": 0.18,
+                    "right": 0.18,
+                    "top": 0.35,
+                    "bottom": 0.35,
+                    "header": 0.2,
+                    "footer": 0.2,
+                },
+            )
+        elif worksheet.title == "Rating Summary":
+            apply_print_layout(worksheet, worksheet.ORIENTATION_PORTRAIT)
+        else:
+            apply_print_layout(worksheet)
     
     # Create response
+    #wb.move_sheet("Rating Summary", offset=-wb.sheetnames.index("Rating Summary"))
     output = BytesIO()
     wb.save(output)
     output.seek(0)
@@ -2382,7 +2792,10 @@ def export_all_responses(request):
                         safe_subject_name = "".join(c for c in form.subject.name if c.isalnum() or c in (' ', '-', '_')).rstrip()
                         safe_professor_name = "".join(c for c in form.professor.user.get_full_name() if c.isalnum() or c in (' ', '-', '_')).rstrip()
                         
-                        filename = f"{safe_subject_name}_{safe_professor_name}_{form.subject.get_subject_type_display()}.xlsx"
+                        if form.practical_batch:
+                            filename = f"{safe_subject_name}_{safe_professor_name}_{form.subject.get_subject_type_display()}_{form.practical_batch.name}.xlsx"
+                        else:
+                            filename = f"{safe_subject_name}_{safe_professor_name}_{form.subject.get_subject_type_display()}.xlsx"
                         file_path = f"{folder_path}/{filename}"
                         
                         # Add to zip
@@ -2416,6 +2829,149 @@ def export_all_responses(request):
             os.rmdir(temp_dir)
         except:
             pass
+
+
+@login_required
+@user_passes_test(is_admin)
+def send_faculty_mails_view(request):
+    """Send feedback reports to respective faculty members using user SMTP setup"""
+    if request.method != 'POST':
+        return redirect('manage_feedback_forms')
+        
+    gmail_address = request.POST.get('gmail_address', '').strip()
+    app_password = request.POST.get('app_password', '').strip()
+    
+    if not gmail_address or not app_password:
+        messages.error(request, "Gmail address and App Password are required.")
+        return redirect('manage_feedback_forms')
+        
+    # Save/remember this setup per user
+    UserMailSetup.objects.update_or_create(
+        user=request.user,
+        defaults={
+            'gmail_address': gmail_address,
+            'app_password': app_password
+        }
+    )
+    
+    # Get all forms with responses
+    forms_with_responses = FeedbackForm.objects.filter(
+        responses__isnull=False
+    ).distinct().select_related(
+        'subject', 'professor__user', 'practical_batch', 'division'
+    )
+    
+    if not forms_with_responses.exists():
+        messages.warning(request, "No feedback responses found to mail.")
+        return redirect('manage_feedback_forms')
+        
+    # Group forms by professor
+    from collections import defaultdict
+    professor_forms = defaultdict(list)
+    for form in forms_with_responses:
+        professor_forms[form.professor].append(form)
+        
+    # Remove spaces from Gmail app passwords
+    clean_password = app_password.replace(' ', '')
+    
+    # Set up dynamic SMTP connection
+    from django.core.mail import get_connection, EmailMessage
+    
+    try:
+        connection = get_connection(
+            backend='django.core.mail.backends.smtp.EmailBackend',
+            host='smtp.gmail.com',
+            port=587,
+            username=gmail_address,
+            password=clean_password,
+            use_tls=True,
+        )
+        connection.open()
+    except Exception as e:
+        messages.error(request, f"Failed to connect to SMTP server: {str(e)}. Please check your credentials and App Password.")
+        return redirect('manage_feedback_forms')
+        
+    success_count = 0
+    fail_count = 0
+    error_details = []
+    
+    class MockRequest:
+        def __init__(self, user):
+            self.user = user
+    mock_request = MockRequest(request.user)
+    
+    for professor, forms in professor_forms.items():
+        professor_email = professor.user.email
+        if not professor_email:
+            fail_count += 1
+            error_details.append(f"{professor.user.get_full_name()} (missing email)")
+            continue
+            
+        try:
+            current_year = timezone.now().year
+            subjects_info = []
+            for form in forms:
+                batch_str = f", Batch: {form.practical_batch.name}" if form.practical_batch else ""
+                subjects_info.append(
+                    f"- {form.subject.code} - {form.subject.name} ({form.subject.get_subject_type_display()}, Division: {form.division}{batch_str})"
+                )
+            subjects_list_str = "\n".join(subjects_info)
+
+            body_text = (
+                f"Dear Professor {professor.user.get_full_name()},\n\n"
+                f"We are pleased to share the student feedback reports for your courses. Please find the detailed Excel reports attached to this email.\n\n"
+                f"Summary of Attached Reports:\n"
+                f"----------------------------\n"
+                f"Academic Year: {current_year}\n"
+                f"Subject List:\n"
+                f"{subjects_list_str}\n\n"
+                f"Important Instructions:\n"
+                f"- These reports are pre-configured with print layouts, print areas, and signature blocks.\n"
+                f"- For the best formatting and print results, please open the files using Microsoft Excel and print/export them directly.\n\n"
+                f"Please review the attached sheets for detailed statistics, student responses, and average ratings.\n\n"
+                f"If you have any questions or require further assistance, please contact the administrator.\n\n"
+                f"Best regards,\n"
+                f"KJSIT Feedback System"
+            )
+
+            email = EmailMessage(
+                subject="Student Feedback Reports - KJSIT Feedback System",
+                body=body_text,
+                from_email=gmail_address,
+                to=[professor_email],
+                connection=connection
+            )
+            
+            for form in forms:
+                excel_response = export_responses(mock_request, form.id, archive=False)
+                excel_content = excel_response.content
+                
+                safe_subject_name = "".join(c for c in form.subject.name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                safe_professor_name = "".join(c for c in form.professor.user.get_full_name() if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                if form.practical_batch:
+                    filename = f"{safe_subject_name}_{safe_professor_name}_{form.subject.get_subject_type_display()}_{form.practical_batch.name}.xlsx"
+                else:
+                    filename = f"{safe_subject_name}_{safe_professor_name}_{form.subject.get_subject_type_display()}.xlsx"
+                    
+                email.attach(filename, excel_content, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                
+            email.send()
+            success_count += 1
+        except Exception as e:
+            fail_count += 1
+            error_details.append(f"{professor.user.get_full_name()} ({str(e)})")
+            
+    try:
+        connection.close()
+    except:
+        pass
+        
+    if success_count > 0:
+        messages.success(request, f"Successfully sent feedback reports to {success_count} professors.")
+    if fail_count > 0:
+        messages.error(request, f"Failed to send to {fail_count} professors: {', '.join(error_details)}")
+        
+    return redirect('manage_feedback_forms')
 
 
 @login_required
@@ -2466,7 +3022,11 @@ def clear_data_view(request):
                                 safe_subject_name = "".join(c for c in form.subject.name if c.isalnum() or c in (' ', '-', '_')).rstrip()
                                 safe_professor_name = "".join(c for c in form.professor.user.get_full_name() if c.isalnum() or c in (' ', '-', '_')).rstrip()
                                 
-                                filename = f"{safe_subject_name}_{safe_professor_name}_{form.subject.get_subject_type_display()}.xlsx"
+                                if form.practical_batch:
+                                    filename = f"{safe_subject_name}_{safe_professor_name}_{form.subject.get_subject_type_display()}_{form.practical_batch.name}.xlsx"
+                                else:
+                                    filename = f"{safe_subject_name}_{safe_professor_name}_{form.subject.get_subject_type_display()}.xlsx"
+                                
                                 file_path = f"{folder_path}/{filename}"
                                 
                                 zipf.writestr(file_path, excel_content)

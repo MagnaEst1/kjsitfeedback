@@ -31,6 +31,7 @@ urlpatterns = [
     path('clear-all-responses/', views.clear_all_responses_view, name='clear_all_responses'),
     path('export-responses/<int:form_id>/', views.export_responses, name='export_responses'),
     path('export-all-responses/', views.export_all_responses, name='export_all_responses'),
+    path('send-faculty-mails/', views.send_faculty_mails_view, name='send_faculty_mails'),
     path('clear-data/', views.clear_data_view, name='clear_data'),
     path('bulk-generate-forms/', views.bulk_generate_forms_page, name='bulk_generate_forms_page'),
     path('bulk-generate-feedback-forms/', views.bulk_generate_feedback_forms, name='bulk_generate_feedback_forms'),

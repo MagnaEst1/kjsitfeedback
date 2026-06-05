@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import (
     Division, Professor, Subject, PracticalBatch, PracticalAssignment, Student, 
     TeacherAssignment, FeedbackForm, FeedbackQuestion, 
-    FeedbackResponse, FeedbackAnswer, StudentElectiveSelection, StoredExport
+    FeedbackResponse, FeedbackAnswer, StudentElectiveSelection, StoredExport,
+    UserMailSetup
 )
 
 
@@ -183,3 +184,10 @@ class StoredExportAdmin(admin.ModelAdmin):
     list_display = ['title', 'uploaded_at', 'uploaded_by']
     search_fields = ['title', 'uploaded_by__username', 'uploaded_by__first_name', 'uploaded_by__last_name']
     ordering = ['-uploaded_at']
+
+
+@admin.register(UserMailSetup)
+class UserMailSetupAdmin(admin.ModelAdmin):
+    list_display = ['user', 'gmail_address', 'updated_at']
+    search_fields = ['user__username', 'gmail_address']
+

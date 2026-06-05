@@ -19,13 +19,41 @@
                     </svg>
                     <span>Create New Form</span>
                 </a>
-                <a href="{% url 'export_all_responses' %}" 
-                   class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 font-semibold">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-                    </svg>
-                    <span>Export All Responses</span>
-                </a>
+                <!-- Export Options Dropdown -->
+                <div class="relative inline-block text-left" id="exportDropdownContainer">
+                    <button type="button" onclick="toggleExportDropdown()"
+                            class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 font-semibold focus:outline-none">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span>Export</span>
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- Dropdown Menu -->
+                    <div id="exportDropdownMenu" class="hidden absolute right-0 mt-2 w-56 rounded-lg shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-50 divide-y divide-gray-100 overflow-hidden border border-gray-100 transform origin-top-right transition-all duration-200">
+                        <div class="py-1">
+                            <a href="{% url 'export_all_responses' %}" onclick="triggerExportZip()"
+                               class="group flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-900 transition-colors duration-150">
+                                <svg class="w-5 h-5 mr-3 text-green-500 group-hover:text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                                <span>Export to ZIP</span>
+                            </a>
+                        </div>
+                        <div class="py-1">
+                            <button type="button" onclick="triggerMailSetup()"
+                                    class="w-full text-left group flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition-colors duration-150">
+                                <svg class="w-5 h-5 mr-3 text-blue-500 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l8-4.8a2 2 0 012.22 0l8 4.8A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l8.25 5.5a2 2 0 002.5 0L21 10"/>
+                                </svg>
+                                <span>Mail Responses</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <form method="post" action="{% url 'clear_all_responses' %}" class="inline">
                     {% csrf_token %}
                     <button type="submit"
@@ -248,6 +276,74 @@
     {% endif %}
 </div>
 
+<!-- Email Setup Modal -->
+<div id="emailSetupModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <!-- Modal backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    
+    <!-- Modal content wrapper -->
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-kjsit-red/20 transform transition-all duration-300">
+            <!-- Modal Header -->
+            <div class="bg-kjsit-red px-6 py-4 flex justify-between items-center text-white">
+                <h3 class="text-xl font-bold">Email Setup & Dispatch</h3>
+                <button type="button" onclick="closeEmailModal()" class="text-white hover:text-gray-200 focus:outline-none">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <form method="post" action="{% url 'send_faculty_mails' %}" id="emailSetupForm" class="p-6">
+                {% csrf_token %}
+                
+                <!-- Instructions / Steps -->
+                <div class="mb-5 bg-gray-50 border-l-4 border-kjsit-red p-4 rounded text-sm text-gray-700">
+                    <h4 class="font-bold text-kjsit-red mb-2">Steps to configure Gmail App Password:</h4>
+                    <ol class="list-decimal list-inside space-y-1.5">
+                        <li>Open the <a href="https://myaccount.google.com/apppasswords" target="_blank" class="text-blue-600 hover:underline font-semibold">Google App Passwords</a> page.</li>
+                        <li>Sign in to your Gmail account if prompted.</li>
+                        <li>Under <span class="font-semibold">App name</span>, enter a descriptive name (e.g. <i>KJSIT Feedback</i>) and click <span class="font-semibold">Create</span>.</li>
+                        <li>Google will display a <span class="font-semibold">16-character App Password</span> (e.g. <code>xxxx xxxx xxxx xxxx</code>).</li>
+                        <li>Copy the 16-character password and paste it into the password field below (spaces will be stripped automatically).</li>
+                    </ol>
+                </div>
+                
+                <!-- Inputs -->
+                <div class="space-y-4">
+                    <div>
+                        <label for="gmail_address" class="block text-sm font-semibold text-gray-700 mb-1">Gmail Address</label>
+                        <input type="email" name="gmail_address" id="gmail_address" required
+                               value="{{ mail_setup.gmail_address|default:'' }}"
+                               placeholder="your.email@gmail.com"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-kjsit-red focus:border-kjsit-red">
+                    </div>
+                    <div>
+                        <label for="app_password" class="block text-sm font-semibold text-gray-700 mb-1">Gmail App Password (16 characters)</label>
+                        <input type="password" name="app_password" id="app_password" required
+                               value="{{ mail_setup.app_password|default:'' }}"
+                               placeholder="xxxx xxxx xxxx xxxx"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-kjsit-red focus:border-kjsit-red">
+                    </div>
+                </div>
+                
+                <!-- Modal Footer -->
+                <div class="mt-6 flex justify-end space-x-3 border-t pt-4">
+                    <button type="button" id="cancelMailBtn" onclick="closeEmailModal()"
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition duration-150">
+                        Cancel
+                    </button>
+                    <button type="submit" id="sendMailsBtn"
+                            class="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-150 font-semibold flex items-center space-x-2">
+                        <span>Continue & Send Mails</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
@@ -424,6 +520,83 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+function openEmailModal() {
+    document.getElementById('emailSetupModal').classList.remove('hidden');
+}
+
+function closeEmailModal() {
+    document.getElementById('emailSetupModal').classList.add('hidden');
+}
+
+function toggleExportDropdown() {
+    const menu = document.getElementById('exportDropdownMenu');
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
+}
+
+function triggerMailSetup() {
+    const menu = document.getElementById('exportDropdownMenu');
+    if (menu) {
+        menu.classList.add('hidden');
+    }
+    openEmailModal();
+}
+
+// Close dropdown if clicked outside
+document.addEventListener('click', function(event) {
+    const container = document.getElementById('exportDropdownContainer');
+    const menu = document.getElementById('exportDropdownMenu');
+    if (container && menu && !container.contains(event.target)) {
+        menu.classList.add('hidden');
+    }
+});
+
+// Intercept form submit to show loading state
+const emailForm = document.getElementById('emailSetupForm');
+if (emailForm) {
+    emailForm.addEventListener('submit', function(e) {
+        const btn = document.getElementById('sendMailsBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="animate-spin h-5 w-5 mr-3 text-white inline-block" viewBox="0 0 24 24" fill="none" style="width: 1.25rem; height: 1.25rem; animation: spin 1s linear infinite;">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity: 0.25;"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" style="opacity: 0.75;"></path>
+                </svg>
+                <span>Sending Mails...</span>
+            `;
+        }
+        const cancelBtn = document.getElementById('cancelMailBtn');
+        if (cancelBtn) {
+            cancelBtn.disabled = true;
+            cancelBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    });
+}
+
+function triggerExportZip() {
+    const menu = document.getElementById('exportDropdownMenu');
+    if (menu) {
+        menu.classList.add('hidden');
+    }
+    openExcelTipModal();
+}
+
+function openExcelTipModal() {
+    const modal = document.getElementById('excelTipModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeExcelTipModal() {
+    const modal = document.getElementById('excelTipModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
 </script>
 
 <style>
@@ -457,6 +630,41 @@ tbody tr:hover {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
 </style>
+
+<!-- Excel Print Tip Modal -->
+<div id="excelTipModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <!-- Modal backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    
+    <!-- Modal content wrapper -->
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border border-kjsit-red/20 transform transition-all duration-300 p-6">
+            <!-- Info Icon -->
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            
+            <h3 class="text-lg font-bold text-gray-900 text-center mb-2">Excel Printing Tip</h3>
+            <p class="text-sm text-gray-600 text-center mb-6">
+                These reports are pre-configured with optimal print layouts, page margins, and signature blocks. For the best formatting and print results, please open these files using <strong>Microsoft Excel</strong> rather than other spreadsheet viewers.
+            </p>
+            
+            <div class="flex justify-center">
+                <button type="button" onclick="closeExcelTipModal()"
+                        class="px-6 py-2 bg-kjsit-red text-white rounded-lg hover:bg-kjsit-red-dark transition duration-150 font-semibold">
+                    Got it, thanks!
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

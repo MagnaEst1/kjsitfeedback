@@ -291,3 +291,15 @@ class StoredExport(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class UserMailSetup(models.Model):
+    """Stores Gmail SMTP settings (address & app password) remembered per user"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='mail_setup')
+    gmail_address = models.EmailField()
+    app_password = models.CharField(max_length=255)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Mail Setup for {self.user.username} ({self.gmail_address})"
+
