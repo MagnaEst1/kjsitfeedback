@@ -91,7 +91,7 @@ jobs:
               
               # kill old processes (IMPORTANT)
               pkill -f "passenger" || true
-              pkill -f "python" || true
+              # pkill -f "python" || true
               
               # restart passenger
               mkdir -p /home/t0hmsl01bmmd/public_html/$site/tmp
