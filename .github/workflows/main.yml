@@ -74,11 +74,12 @@ jobs:
               /home/t0hmsl01bmmd/public_html/$site/
 
               # 2. Activate virtualenv
-              source /home/t0hmsl01bmmd/virtualenv/public_html/$site/3.10/bin/activate
               cd /home/t0hmsl01bmmd/public_html/$site
+              
+              export TERM=xterm
 
               # 3. Run migrations
-              python manage.py migrate
+              /home/t0hmsl01bmmd/virtualenv/public_html/$site/3.10/bin/python manage.py migrate
 
               # 4. Collect static
               # python manage.py collectstatic --noinput
@@ -90,7 +91,7 @@ jobs:
               find /home/t0hmsl01bmmd/public_html/$site -type d -name "__pycache__" -exec rm -r {} +
               
               # kill old processes (IMPORTANT)
-              pkill -f "passenger" || true
+              # pkill -f "passenger" || true
               # pkill -f "python" || true
               
               # restart passenger
