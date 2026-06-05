@@ -16,10 +16,11 @@ jobs:
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: compfeedback.kjsieit.in
-          username: compfeedback
+          username: studentfeedback
           password: ${{ secrets.FTPPASSWORD }}
           protocol: ftps
           port: 21
+          server-dir: /public_html/compfeedback.kjsieit.in/
           exclude: |
             **/.git*
             **/__init__.py
