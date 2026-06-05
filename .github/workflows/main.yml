@@ -20,7 +20,7 @@ jobs:
           password: ${{ secrets.FTPPASSWORD }}
           protocol: ftps
           port: 21
-          server-dir: /public_html/compfeedback.kjsieit.in/
+          server-dir: /compfeedback.kjsieit.in/
           exclude: |
             **/.git*
             **/__init__.py
