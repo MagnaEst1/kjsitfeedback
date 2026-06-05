@@ -46,8 +46,8 @@ jobs:
       - name: 🔁 Sync all sites from compfeedback
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: compfeedback.kjsieit.in
-          username: compfeedback
+          host: kjsieit.in
+          username: t0hmsl01bmmd
           key: ${{ secrets.SSH_KEY }}
           script: |
 
