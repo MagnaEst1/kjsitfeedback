@@ -60,8 +60,16 @@ jobs:
 
               # 1. Sync code from comp → site
               rsync -av --delete \
-              --exclude={stored_exports,media,staticfiles,__pycache__,*.pyc,.git,.ftp*} \
-              --exclude='*/settings.py' \
+              --exclude 'stored_exports/' \
+              --exclude 'media/' \
+              --exclude 'staticfiles/' \
+              --exclude '__pycache__/' \
+              --exclude '*.pyc' \
+              --exclude '.git/' \
+              --exclude '.ftp*' \
+              --exclude '.venv/' \
+              --exclude 'virtualenv/' \
+              --exclude '*/settings.py' \
               /home/t0hmsl01bmmd/public_html/compfeedback.kjsieit.in/ \
               /home/t0hmsl01bmmd/public_html/$site/
 
