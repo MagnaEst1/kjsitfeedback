@@ -1,4 +1,5 @@
 name: 🚀 Deploy websites on push
+
 on:
   push:
     branches: [ main ]
@@ -6,11 +7,12 @@ on:
 jobs:
   compfeedback:
     runs-on: ubuntu-latest
+
     steps:
       - name: 🚚 Get latest code
         uses: actions/checkout@v3
 
-      - name: 📂 Deploy compfeedback
+      - name: 📂 Deploy compfeedback (MAIN SOURCE)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: compfeedback.kjsieit.in
@@ -35,97 +37,47 @@ jobs:
             README.md
             uv.lock
 
-  itfeedback:
+  sync_sites:
     runs-on: ubuntu-latest
     needs: compfeedback
+
     steps:
-      - name: 🚚 Get latest code
-        uses: actions/checkout@v3
-
-      - name: 📂 Deploy itfeedback
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+      - name: 🔁 Sync all sites from compfeedback
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          server: itfeedback.kjsieit.in
-          username: itfeedback
-          password: ${{ secrets.FTPPASSWORD }}
-          protocol: ftps
-          port: 21
-          exclude: |
-            **/.git*
-            **/__init__.py
-            .htaccess
-            .python-version
-            **/.git*/**
-            **/*.xlsx
-            Data/**
-            kjsitfeedback/settings.py
-            passenger_wsgi.py
-            **/migrations/**
-            **/__pycache__/**
-            defaultdata.txt
-            .gitignore
-            README.md
-            uv.lock
+          host: compfeedback.kjsieit.in
+          username: compfeedback
+          key: ${{ secrets.SSH_KEY }}
+          script: |
 
-  extcfeedback:
-    runs-on: ubuntu-latest
-    needs: itfeedback
-    steps:
-      - name: 🚚 Get latest code
-        uses: actions/checkout@v3
+            echo "🚀 Starting sync from compfeedback..."
 
-      - name: 📂 Deploy extcfeedback
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
-        with:
-          server: extcfeedback.kjsieit.in
-          username: extcfeedback
-          password: ${{ secrets.FTPPASSWORD }}
-          protocol: ftps
-          port: 21
-          exclude: |
-            **/.git*
-            **/__init__.py
-            .htaccess
-            .python-version
-            **/.git*/**
-            **/*.xlsx
-            Data/**
-            kjsitfeedback/settings.py
-            passenger_wsgi.py
-            **/migrations/**
-            **/__pycache__/**
-            defaultdata.txt
-            .gitignore
-            README.md
-            uv.lock
-  aidsfeedback:
-    runs-on: ubuntu-latest
-    needs: extcfeedback
-    steps:
-      - name: 🚚 Get latest code
-        uses: actions/checkout@v3
+            for site in itfeedback.kjsieit.in extcfeedback.kjsieit.in aidsfeedback.kjsieit.in bshfeedback.kjsieit.in; do
+              echo "=============================="
+              echo "Deploying to $site"
+              echo "=============================="
 
-      - name: 📂 Deploy aidsfeedback
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
-        with:
-          server: aidsfeedback.kjsieit.in
-          username: aidsfeedback
-          password: ${{ secrets.FTPPASSWORD }}
-          protocol: ftps
-          port: 21
-          exclude: |
-            **/.git*
-            **/__init__.py
-            .htaccess
-            .python-version
-            **/.git*/**
-            **/*.xlsx
-            Data/**
-            kjsitfeedback/settings.py
-            passenger_wsgi.py
-            **/migrations/**
-            **/__pycache__/**
-            defaultdata.txt
-            uv.lock
-            .gitignore
-            README.md
+              # 1. Sync code from comp → site
+              rsync -av --delete \
+              --exclude={stored_exports,media,staticfiles,__pycache__,*.pyc,.git,.ftp*,settings.py} \
+              /home/t0hmsl01bmmd/public_html/compfeedback.kjsieit.in/ \
+              /home/t0hmsl01bmmd/public_html/$site/
+
+              # 2. Activate virtualenv
+              source /home/t0hmsl01bmmd/virtualenv/public_html/$site/3.10/bin/activate
+              cd /home/t0hmsl01bmmd/public_html/$site
+
+              # 3. Run migrations
+              python manage.py migrate
+
+              # 4. Collect static
+              python manage.py collectstatic --noinput
+
+              # 5. Restart Passenger (cPanel)
+              touch /home/t0hmsl01bmmd/public_html/$site/tmp/restart.txt
+
+              echo "✅ Done $site"
+              echo ""
+            done
+
+            echo "🎯 All sites deployed successfully"
