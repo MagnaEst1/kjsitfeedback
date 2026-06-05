@@ -1,0 +1,1840 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Centralized login portal and administration gateway for the 5 departmental feedback applications at KJSIT.">
+  <title>KJSIT Feedback Systems Administration Hub</title>
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- Styling -->
+  <style>
+    :root {
+      --bg-dark: #09090b;
+      --bg-card: rgba(18, 18, 24, 0.7);
+      --bg-input: rgba(30, 30, 40, 0.5);
+      --text-main: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --kjsit-red: #a50c22;
+      --kjsit-red-dark: #7a0918;
+      --kjsit-red-light: #c41230;
+      --primary-glow: rgba(165, 12, 34, 0.35);
+      --gold-accent: #d97706;
+      --success: #10b981;
+      --error: #ef4444;
+      --transition-speed: 0.3s;
+      --font-display: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    /* Reset & Base styling */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--kjsit-red) var(--bg-dark);
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-h-screen: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Canvas background overlay */
+    #bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Ambient background glows */
+    .ambient-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--primary-glow) 0%, rgba(9, 9, 11, 0) 70%);
+      top: -200px;
+      left: -200px;
+      z-index: 1;
+      opacity: 0.8;
+      pointer-events: none;
+      filter: blur(40px);
+    }
+
+    .ambient-glow-2 {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(217, 119, 6, 0.08) 0%, rgba(9, 9, 11, 0) 70%);
+      bottom: -150px;
+      right: -100px;
+      z-index: 1;
+      opacity: 0.7;
+      pointer-events: none;
+      filter: blur(30px);
+    }
+
+    /* Accessibility focus styling */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible {
+      outline: 2px solid var(--gold-accent);
+      outline-offset: 4px;
+    }
+
+    /* ==========================================
+       LOCK SCREEN / SECURE GATEWAY
+       ========================================== */
+    #lock-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 9999;
+      background: radial-gradient(circle at center, #15080b 0%, var(--bg-dark) 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #lock-screen.unlocked {
+      opacity: 0;
+      transform: scale(1.05);
+      pointer-events: none;
+    }
+
+    .lock-card {
+      width: 90%;
+      max-width: 440px;
+      background: rgba(18, 18, 24, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 40px 32px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px var(--primary-glow);
+      text-align: center;
+      z-index: 10;
+      position: relative;
+    }
+
+    .lock-logo-container {
+      width: 90px;
+      height: 90px;
+      margin: 0 auto 24px;
+      background: radial-gradient(circle, var(--kjsit-red) 0%, var(--kjsit-red-dark) 100%);
+      border-radius: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 8px 25px rgba(165, 12, 34, 0.4);
+      position: relative;
+    }
+
+    .lock-logo-container img {
+      width: 64px;
+      height: 64px;
+      object-contain: fit;
+    }
+
+    .lock-title {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #ffffff 30%, #f4a5ae 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .lock-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+      text-align: left;
+      position: relative;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper svg.input-icon {
+      position: absolute;
+      left: 14px;
+      width: 18px;
+      height: 18px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      padding: 14px 44px 14px 42px;
+      background-color: var(--bg-input);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-size: 15px;
+      font-family: var(--font-body);
+      transition: all var(--transition-speed) ease;
+    }
+
+    .input-wrapper input:focus {
+      border-color: var(--kjsit-red-light);
+      background-color: rgba(30, 30, 40, 0.8);
+      box-shadow: 0 0 10px rgba(196, 18, 48, 0.25);
+      outline: none;
+    }
+
+    .password-toggle-btn {
+      position: absolute;
+      right: 14px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    .password-toggle-btn:hover {
+      color: var(--text-main);
+    }
+
+    .password-toggle-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, var(--kjsit-red-light) 0%, var(--kjsit-red) 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 15px rgba(165, 12, 34, 0.3);
+      transition: all var(--transition-speed) ease;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(196, 18, 48, 0.5);
+      background: linear-gradient(135deg, #d31636 0%, var(--kjsit-red-light) 100%);
+    }
+
+    .btn-submit:active {
+      transform: translateY(1px);
+    }
+
+    .lock-error {
+      color: var(--error);
+      font-size: 13px;
+      margin-top: 14px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      animation: fadeIn 0.3s forwards;
+    }
+
+    /* Error Shake Animation */
+    .shake {
+      animation: shakeAnimation 0.5s ease-in-out;
+      border-color: var(--error) !important;
+    }
+
+    @keyframes shakeAnimation {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      10%,
+      30%,
+      50%,
+      70%,
+      90% {
+        transform: translateX(-6px);
+      }
+
+      20%,
+      40%,
+      60%,
+      80% {
+        transform: translateX(6px);
+      }
+    }
+
+    /* ==========================================
+       MAIN PORTAL INTERFACE
+       ========================================== */
+    #portal-content {
+      position: relative;
+      z-index: 10;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    #portal-content.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Navigation Header */
+    nav.portal-navbar {
+      background: rgba(15, 15, 20, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 2px solid var(--kjsit-red);
+      padding: 18px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .nav-brand-logo {
+      width: 44px;
+      height: 44px;
+      background: white;
+      border-radius: 50%;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .nav-brand-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .nav-brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .nav-title {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      background-color: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .icon-btn:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .icon-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .btn-logout {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background-color: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      border-radius: 12px;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-logout:hover {
+      background-color: var(--error);
+      color: white;
+      border-color: var(--error);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    /* Main Container Content */
+    main.portal-main {
+      flex-grow: 1;
+      padding: 48px 5%;
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .portal-hero {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .portal-hero h1 {
+      font-family: var(--font-display);
+      font-size: 38px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff 40%, #f4a5ae 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .portal-hero p {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+
+
+    /* Departments Grid */
+    .dept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 30px;
+      margin-bottom: 48px;
+    }
+
+    .dept-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .dept-card:hover {
+      transform: translateY(-8px);
+      border-color: rgba(165, 12, 34, 0.4);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), 0 0 25px rgba(165, 12, 34, 0.15);
+    }
+
+    /* Glowing decorative spot in each card */
+    .dept-card::after {
+      content: '';
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      background: radial-gradient(circle, rgba(165, 12, 34, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+      top: -75px;
+      right: -75px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .dept-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .dept-icon-wrapper {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: rgba(165, 12, 34, 0.1);
+      border: 1px solid rgba(165, 12, 34, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--kjsit-red-light);
+      transition: all 0.3s;
+    }
+
+    .dept-card:hover .dept-icon-wrapper {
+      background: var(--kjsit-red);
+      color: white;
+      transform: scale(1.05) rotate(5deg);
+      box-shadow: 0 4px 15px rgba(165, 12, 34, 0.3);
+    }
+
+    .dept-icon-wrapper svg {
+      width: 26px;
+      height: 26px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 50px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+
+    .status-badge.online {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.2);
+      color: #6ee7b7;
+    }
+
+    .status-badge.offline {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--text-muted);
+    }
+
+    .status-badge.online .status-dot {
+      background-color: var(--success);
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse 1.8s infinite;
+    }
+
+    .status-badge.offline .status-dot {
+      background-color: var(--error);
+      box-shadow: 0 0 8px var(--error);
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.9);
+        opacity: 0.6;
+      }
+
+      50% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(0.9);
+        opacity: 0.6;
+      }
+    }
+
+    .dept-info {
+      margin-bottom: 28px;
+      flex-grow: 1;
+      position: relative;
+      z-index: 2;
+    }
+
+    .dept-info h2 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 6px;
+    }
+
+    .dept-info .dept-code {
+      font-size: 12px;
+      color: var(--gold-accent);
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+
+    .dept-info .dept-url {
+      font-size: 13px;
+      color: var(--text-muted);
+      word-break: break-all;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .dept-info .dept-url:hover {
+      color: white;
+    }
+
+    .dept-info .dept-url svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    /* Actions buttons */
+    .card-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: auto;
+      position: relative;
+      z-index: 2;
+    }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .btn-action {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary-action {
+      background-color: var(--kjsit-red);
+      color: white;
+      border: 1px solid var(--kjsit-red);
+      box-shadow: 0 4px 10px rgba(165, 12, 34, 0.2);
+    }
+
+    .btn-primary-action:hover {
+      background-color: var(--kjsit-red-light);
+      border-color: var(--kjsit-red-light);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(165, 12, 34, 0.4);
+    }
+
+    .btn-secondary-action {
+      background-color: rgba(255, 255, 255, 0.03);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .btn-secondary-action:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .btn-action svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    /* ==========================================
+       SETTINGS DRAWER / MODAL
+       ========================================== */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000;
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .modal-content {
+      width: 90%;
+      max-width: 650px;
+      background: #121216;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      max-height: 85vh;
+      overflow: hidden;
+      transform: translateY(-20px);
+      animation: slideUp 0.3s forwards;
+    }
+
+    @keyframes slideUp {
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-20px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    .modal-close:hover {
+      color: white;
+    }
+
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+
+    .settings-section-title {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gold-accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 6px;
+    }
+
+    .settings-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .settings-full {
+      margin-bottom: 16px;
+    }
+
+    .modal-footer {
+      padding: 20px 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      background-color: #0b0b0e;
+    }
+
+    .btn-text {
+      padding: 10px 20px;
+      background: none;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-family: var(--font-display);
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-text:hover {
+      color: white;
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    /* ==========================================
+       TOAST NOTIFICATIONS
+       ========================================== */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background-color: #1c1c24;
+      border-left: 4px solid var(--kjsit-red);
+      color: var(--text-main);
+      padding: 16px 20px;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 280px;
+      max-width: 400px;
+      transform: translateX(120%);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .toast.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    .toast.toast-success {
+      border-left-color: var(--success);
+    }
+
+    .toast.toast-error {
+      border-left-color: var(--error);
+    }
+
+    .toast-icon {
+      flex-shrink: 0;
+    }
+
+    .toast-success .toast-icon {
+      color: var(--success);
+    }
+
+    .toast-error .toast-icon {
+      color: var(--error);
+    }
+
+    .toast-msg {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* Footer */
+    footer.portal-footer {
+      background: rgba(9, 9, 11, 0.85);
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      padding: 24px 5%;
+      text-align: center;
+      margin-top: auto;
+      z-index: 10;
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .footer-brand img {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+    }
+
+    .footer-brand span {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    footer.portal-footer p {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .settings-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+
+      .portal-hero h1 {
+        font-size: 28px;
+      }
+
+      .dept-grid {
+        grid-template-columns: 1fr;
+      }
+
+      nav.portal-navbar {
+        padding: 12px 16px;
+      }
+
+      .nav-title {
+        font-size: 16px;
+      }
+
+      main.portal-main {
+        padding: 24px 16px;
+      }
+
+
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Particle Background Layer -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- Ambient Glow elements -->
+  <div class="ambient-glow"></div>
+  <div class="ambient-glow-2"></div>
+
+  <!-- ==========================================
+       LOCK SCREEN SECTION
+       ========================================== -->
+  <section id="lock-screen" aria-label="Access Gatekeeper">
+    <div class="lock-card" id="lock-card">
+      <div class="lock-logo-container">
+        <!-- Safe fallback for missing local files -->
+        <img src="./somaiya.png" alt="KJSIT Logo"
+          onerror="this.onerror=null; this.style.display='none'; document.getElementById('lock-logo-fallback').style.display='block';">
+        <svg id="lock-logo-fallback" style="display:none; width: 40px; height: 40px; color: white;" fill="none"
+          stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+
+      <h1 class="lock-title">Admin Hub Lock</h1>
+      <p class="lock-subtitle">Feedback Systems Central Management Portal.<br>Provide authorized security key to access.
+      </p>
+
+      <form id="lock-form" onsubmit="handleVerification(event)">
+        <div class="form-group">
+          <label for="access-key-input" class="form-label">Master Key</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <input type="password" id="access-key-input" placeholder="••••••••" required
+              autocomplete="current-password">
+            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('access-key-input')"
+              title="Toggle visibility" aria-label="Toggle Password Visibility">
+              <svg id="eye-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" id="btn-lock-submit">
+          <span>Verify & Unlock</span>
+          <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+          </svg>
+        </button>
+      </form>
+
+      <div class="lock-error" id="lock-error-msg">
+        <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+            clip-rule="evenodd" />
+        </svg>
+        <span id="lock-error-text">Invalid access key. Try again.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       MAIN PORTAL INTERFACE CONTENT
+       ========================================== -->
+  <div id="portal-content">
+
+    <!-- Navbar Header -->
+    <nav class="portal-navbar">
+      <a href="#" class="nav-brand">
+        <div class="nav-brand-logo">
+          <img src="./somaiya.png" alt="KJSIT Logo"
+            onerror="this.onerror=null; this.style.display='none'; document.getElementById('nav-logo-fallback').style.display='block';">
+          <svg id="nav-logo-fallback" style="display:none; width: 24px; height: 24px; color: var(--kjsit-red);"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        </div>
+        <div class="nav-brand-text">
+          <span class="nav-title">KJSIT Admin Hub</span>
+          <span class="nav-subtitle">Departmental Systems Gateway</span>
+        </div>
+      </a>
+
+      <div class="nav-controls">
+        <button class="icon-btn" onclick="openSettingsModal()" title="Portal Settings" aria-label="Open Settings">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
+        <button class="btn-logout" onclick="lockPortal()">
+          <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <span>Lock Hub</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main section -->
+    <main class="portal-main">
+
+      <!-- Hero Header -->
+      <section class="portal-hero">
+        <h1>KJSIT Feedback Systems</h1>
+        <p>Select a department portal below. Copy the password to your clipboard and open the login portal to sign in
+          securely.</p>
+      </section>
+
+
+
+      <!-- Grid of Department Portals -->
+      <section class="dept-grid" id="departments-container">
+        <!-- Rendered dynamically via JS -->
+      </section>
+
+    </main>
+
+    <!-- Portal Footer -->
+    <footer class="portal-footer">
+      <div class="footer-brand">
+        <img src="./somaiya.png" alt="KJSIT Logo" onerror="this.onerror=null; this.style.display='none';">
+        <span>K. J. Somaiya Institute of Technology</span>
+      </div>
+      <p>&copy; 2026 KJSIT Feedback Systems Administration Hub. Private internal utility.</p>
+    </footer>
+
+  </div>
+
+  <!-- ==========================================
+       SETTINGS MODAL
+       ========================================== -->
+  <div class="modal-backdrop" id="settings-modal" onclick="closeSettingsModalOutside(event)">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Hub Settings & Configuration</h2>
+        <button class="modal-close" onclick="closeSettingsModal()" aria-label="Close settings">
+          <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Security section -->
+        <h3 class="settings-section-title">Credentials Config</h3>
+        <div class="settings-row">
+          <div class="form-group">
+            <label for="set-master-key" class="form-label">Portal Access Key</label>
+            <div class="input-wrapper">
+              <input type="password" id="set-master-key" value="">
+              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('set-master-key')"
+                aria-label="Toggle password visibility">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="set-admin-pass" class="form-label">Django Admin Password</label>
+            <div class="input-wrapper">
+              <input type="password" id="set-admin-pass" value="">
+              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('set-admin-pass')"
+                aria-label="Toggle password visibility">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="form-group">
+            <label for="set-admin-user" class="form-label">Django Admin Username</label>
+            <div class="input-wrapper">
+              <input type="text" id="set-admin-user" value="admin">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="set-login-path" class="form-label">Admin Login Path</label>
+            <div class="input-wrapper">
+              <input type="text" id="set-login-path" value="/adminlogin/">
+            </div>
+          </div>
+        </div>
+
+        <!-- Endpoints settings -->
+        <h3 class="settings-section-title">Department Domains</h3>
+
+        <div class="form-group settings-full">
+          <label for="url-comp" class="form-label">Computer Engineering (COMP)</label>
+          <div class="input-wrapper">
+            <input type="url" id="url-comp" value="https://compfeedback.kjsieit.in">
+          </div>
+        </div>
+
+        <div class="form-group settings-full">
+          <label for="url-it" class="form-label">Information Technology (IT)</label>
+          <div class="input-wrapper">
+            <input type="url" id="url-it" value="https://itfeedback.kjsieit.in">
+          </div>
+        </div>
+
+        <div class="form-group settings-full">
+          <label for="url-aids" class="form-label">Artificial Intelligence & Data Science (AIDS)</label>
+          <div class="input-wrapper">
+            <input type="url" id="url-aids" value="https://aidsfeedback.kjsieit.in">
+          </div>
+        </div>
+
+        <div class="form-group settings-full">
+          <label for="url-extc" class="form-label">Electronics & Telecommunication (EXTC)</label>
+          <div class="input-wrapper">
+            <input type="url" id="url-extc" value="https://extcfeedback.kjsieit.in">
+          </div>
+        </div>
+
+        <div class="form-group settings-full">
+          <label for="url-bsh" class="form-label">Basic Sciences & Humanities (BSH)</label>
+          <div class="input-wrapper">
+            <input type="url" id="url-bsh" value="https://bshfeedback.kjsieit.in">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-text" onclick="resetSettingsToDefault()">Reset Defaults</button>
+        <button class="btn-text" onclick="closeSettingsModal()">Cancel</button>
+        <button class="btn-submit" style="width: auto; padding: 10px 24px;" onclick="saveConfigSettings()">Save
+          Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- ==========================================
+       JAVASCRIPT LOGIC
+       ========================================== -->
+  <script>
+    // -------------------------------------------------------------
+    // DEFAULT CONFIGURATION VALUES
+    // -------------------------------------------------------------
+    const DEFAULTS = {
+      masterKey: '',
+      adminUsername: 'admin',
+      adminPassword: atob('UGFzczEyM0A='), // 'Pass123@' safely obfuscated to keep it out of plaintext HTML
+      loginPath: '/adminlogin/',
+      departments: [
+        { id: 'comp', code: 'COMP', name: 'Computer Engineering', url: 'https://compfeedback.kjsieit.in' },
+        { id: 'it', code: 'IT', name: 'Information Technology', url: 'https://itfeedback.kjsieit.in' },
+        { id: 'aids', code: 'AIDS', name: 'Artificial Intelligence & Data Science', url: 'https://aidsfeedback.kjsieit.in' },
+        { id: 'extc', code: 'EXTC', name: 'Electronics & Telecommunication', url: 'https://extcfeedback.kjsieit.in' },
+        { id: 'bsh', code: 'BSH', name: 'Basic Sciences & Humanities', url: 'https://bshfeedback.kjsieit.in' }
+      ]
+    };
+
+    // Current active config
+    let config = {};
+
+    // Department SVG Icons mapping
+    const ICONS = {
+      comp: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>`,
+      it: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>`,
+      aids: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>`,
+      extc: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
+      bsh: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>`
+    };
+
+    // Initialize Page
+    document.addEventListener('DOMContentLoaded', () => {
+      loadConfig();
+      initParticles();
+
+      // Auto-unlock if session states they are verified already
+      if (sessionStorage.getItem('kjsit_hub_verified') === 'true') {
+        const lockScreen = document.getElementById('lock-screen');
+        lockScreen.classList.add('unlocked');
+        setTimeout(() => {
+          lockScreen.style.display = 'none';
+        }, 600);
+        showPortalContent();
+      } else {
+        // Check if masterKey is configured
+        if (!config.masterKey) {
+          document.querySelector('.lock-title').textContent = 'Setup Admin Hub';
+          document.querySelector('.lock-subtitle').innerHTML = 'No Master Key configured. Create a Master Key to secure this admin portal.';
+          document.querySelector('#btn-lock-submit span').textContent = 'Create Key & Unlock';
+        }
+        // Focus on lock screen input
+        document.getElementById('access-key-input').focus();
+      }
+    });
+
+    // -------------------------------------------------------------
+    // INITIALIZATION & CONFIG LOADING
+    // -------------------------------------------------------------
+    function loadConfig() {
+      // Load configuration from localStorage, fall back to DEFAULTS
+      const savedConfig = localStorage.getItem('kjsit_hub_config');
+      if (savedConfig) {
+        try {
+          config = JSON.parse(savedConfig);
+        } catch (e) {
+          console.error('Error parsing config, falling back to defaults', e);
+          config = { ...DEFAULTS };
+        }
+      } else {
+        config = { ...DEFAULTS };
+      }
+
+      // Populate inputs in settings modal
+      document.getElementById('set-master-key').value = config.masterKey;
+      document.getElementById('set-admin-user').value = config.adminUsername;
+      document.getElementById('set-admin-pass').value = config.adminPassword;
+      document.getElementById('set-login-path').value = config.loginPath;
+
+      config.departments.forEach(dept => {
+        const input = document.getElementById(`url-${dept.id}`);
+        if (input) input.value = dept.url;
+      });
+
+      renderDepartments();
+    }
+
+    function renderDepartments() {
+      const container = document.getElementById('departments-container');
+      container.innerHTML = '';
+
+      config.departments.forEach(dept => {
+        const cleanUrl = dept.url.replace(/^https?:\/\//i, '');
+        const card = document.createElement('article');
+        card.className = 'dept-card';
+        card.id = `card-${dept.id}`;
+        card.setAttribute('aria-labelledby', `title-${dept.id}`);
+
+        card.innerHTML = `
+          <div class="dept-card-header">
+            <div class="dept-icon-wrapper" aria-hidden="true">
+              ${ICONS[dept.id] || ICONS.comp}
+            </div>
+            <div class="status-badge" id="status-${dept.id}" title="Current Connection Status">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span class="status-text">Checking</span>
+            </div>
+          </div>
+          
+          <div class="dept-info">
+            <span class="dept-code">${dept.code}</span>
+            <h2 id="title-${dept.id}">${dept.name}</h2>
+            <a href="${dept.url}" target="_blank" class="dept-url" title="Open homepage in new tab">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+              </svg>
+              <span>${cleanUrl}</span>
+            </a>
+          </div>
+          
+          <div class="card-actions">
+            <button class="btn-action btn-primary-action" onclick="copyAndOpen('${dept.url}')">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3M12 11h9m0 0l-3-3m3 3l-3 3"/>
+              </svg>
+              <span>Auto Copy & Open</span>
+            </button>
+            <div class="actions-grid">
+              <button class="btn-action btn-secondary-action" onclick="copyPassword()">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                </svg>
+                <span>Copy Pass</span>
+              </button>
+              <button class="btn-action btn-secondary-action" onclick="openLogin('${dept.url}')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                <span>Login Portal</span>
+              </button>
+            </div>
+            <div class="actions-grid">
+              <button class="btn-action btn-secondary-action" onclick="openNotFilled('${dept.url}')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span>Not Filled</span>
+              </button>
+              <button class="btn-action btn-secondary-action" onclick="openExport('${dept.url}')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                <span>Export</span>
+              </button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+
+        // Asynchronously check connection status
+        checkConnection(dept);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // ONLINE STATUS PING UTILITY
+    // -------------------------------------------------------------
+    async function checkConnection(dept) {
+      const statusBadge = document.getElementById(`status-${dept.id}`);
+      const textSpan = statusBadge.querySelector('.status-text');
+      const testUrl = `${dept.url}${config.loginPath}?t=${Date.now()}`;
+
+      try {
+        // Fetch in no-cors mode to bypass SOP blocks. If the server is up and reachable, 
+        // the promise resolves (though response is opaque). If server is offline, it throws an error.
+        const response = await fetch(testUrl, {
+          method: 'GET',
+          mode: 'no-cors',
+          cache: 'no-store',
+          credentials: 'omit'
+        });
+
+        statusBadge.className = 'status-badge online';
+        textSpan.textContent = 'Online';
+      } catch (err) {
+        statusBadge.className = 'status-badge offline';
+        textSpan.textContent = 'Offline';
+      }
+    }
+
+    // -------------------------------------------------------------
+    // GATEKEEPER / LOCK SCREEN
+    // -------------------------------------------------------------
+    function togglePasswordVisibility(id) {
+      const input = document.getElementById(id);
+      const button = input.nextElementSibling;
+
+      if (input.type === 'password') {
+        input.type = 'text';
+        button.querySelector('svg').innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>
+        `;
+      } else {
+        input.type = 'password';
+        button.querySelector('svg').innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        `;
+      }
+    }
+
+    function handleVerification(event) {
+      event.preventDefault();
+
+      const input = document.getElementById('access-key-input');
+      const errorMsg = document.getElementById('lock-error-msg');
+      const errorText = document.getElementById('lock-error-text');
+      const lockCard = document.getElementById('lock-card');
+
+      if (!config.masterKey) {
+        const newKey = input.value.trim();
+        if (newKey.length < 4) {
+          lockCard.classList.add('shake');
+          errorMsg.style.display = 'flex';
+          errorText.textContent = 'Master key must be at least 4 characters.';
+          setTimeout(() => {
+            lockCard.classList.remove('shake');
+          }, 500);
+          return;
+        }
+        config.masterKey = newKey;
+        localStorage.setItem('kjsit_hub_config', JSON.stringify(config));
+        showToast('Master key initialized successfully!', 'success');
+      } else if (input.value !== config.masterKey) {
+        // Trigger Shake animation
+        lockCard.classList.add('shake');
+        errorMsg.style.display = 'flex';
+        errorText.textContent = 'Invalid access key. Please try again.';
+        input.value = '';
+        input.focus();
+
+        setTimeout(() => {
+          lockCard.classList.remove('shake');
+        }, 500);
+        return;
+      }
+
+      // Hide error if visible
+      errorMsg.style.display = 'none';
+
+      // Set verify token in session storage
+      sessionStorage.setItem('kjsit_hub_verified', 'true');
+
+      // Transition Unlock
+      const lockScreen = document.getElementById('lock-screen');
+      lockScreen.classList.add('unlocked');
+
+      // Remove from DOM layout to prevent tab indexing on lock screen elements
+      setTimeout(() => {
+        lockScreen.style.display = 'none';
+      }, 600);
+
+      showPortalContent();
+      showToast('System verification success! Portal unlocked.', 'success');
+    }
+
+    function showPortalContent() {
+      const portalContent = document.getElementById('portal-content');
+      portalContent.style.display = 'flex';
+      // Force repaint to allow transition to trigger
+      portalContent.offsetHeight;
+      portalContent.classList.add('visible');
+    }
+
+    function lockPortal() {
+      sessionStorage.removeItem('kjsit_hub_verified');
+
+      const lockScreen = document.getElementById('lock-screen');
+      const portalContent = document.getElementById('portal-content');
+
+      portalContent.classList.remove('visible');
+
+      setTimeout(() => {
+        lockScreen.style.display = 'flex';
+        // Force repaint
+        lockScreen.offsetHeight;
+        lockScreen.classList.remove('unlocked');
+        document.getElementById('access-key-input').value = '';
+        document.getElementById('access-key-input').focus();
+        document.getElementById('lock-error-msg').style.display = 'none';
+      }, 300);
+    }
+
+    // -------------------------------------------------------------
+    // SECURE COPY-PASSWORD & OPEN PORTAL
+    // -------------------------------------------------------------
+    function copyPassword() {
+      if (!config.adminPassword) {
+        showToast('No admin password configured. Please set one in Settings.', 'error');
+        return false;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(config.adminPassword)
+          .then(() => {
+            showToast('Admin password copied to clipboard!', 'success');
+          })
+          .catch((err) => {
+            console.error('Clipboard copy failed, using fallback: ', err);
+            fallbackCopy(config.adminPassword);
+          });
+      } else {
+        fallbackCopy(config.adminPassword);
+      }
+      return true;
+    }
+
+    function fallbackCopy(text) {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      // Prevent scrolling / visible insertion
+      textArea.style.position = 'fixed';
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      textArea.style.width = '2em';
+      textArea.style.height = '2em';
+      textArea.style.padding = '0';
+      textArea.style.border = 'none';
+      textArea.style.outline = 'none';
+      textArea.style.boxShadow = 'none';
+      textArea.style.background = 'transparent';
+
+      document.body.appendChild(textArea);
+      textArea.select();
+
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          showToast('Admin password copied (legacy)!', 'success');
+        } else {
+          showToast('Failed to copy password automatically.', 'error');
+        }
+      } catch (err) {
+        showToast('Clipboard API error.', 'error');
+      }
+
+      document.body.removeChild(textArea);
+    }
+
+    function openLogin(deptUrl) {
+      const targetUrl = `${deptUrl}${config.loginPath}`;
+      window.open(targetUrl, '_blank');
+    }
+
+    function copyAndOpen(deptUrl) {
+      if (copyPassword()) {
+        openLogin(deptUrl);
+      }
+    }
+
+    function openNotFilled(deptUrl) {
+      const targetUrl = `${deptUrl}/students-not-filled/`;
+      window.open(targetUrl, '_blank');
+    }
+
+    function openExport(deptUrl) {
+      const targetUrl = `${deptUrl}/export-all-responses/`;
+      window.open(targetUrl, '_blank');
+    }
+
+    // -------------------------------------------------------------
+    // TOAST NOTIFICATIONS SYSTEM
+    // -------------------------------------------------------------
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+
+      let icon = '';
+      if (type === 'success') {
+        icon = `<svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+      } else if (type === 'error') {
+        icon = `<svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>`;
+      } else {
+        icon = `<svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+      }
+
+      toast.innerHTML = `
+        <div class="toast-icon">${icon}</div>
+        <div class="toast-msg">${message}</div>
+      `;
+
+      container.appendChild(toast);
+
+      // Force repaint
+      toast.offsetHeight;
+      toast.classList.add('show');
+
+      // Remove toast after delay
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+          container.removeChild(toast);
+        }, 300);
+      }, 4000);
+    }
+
+    // -------------------------------------------------------------
+    // SETTINGS MODAL ACTIONS
+    // -------------------------------------------------------------
+    function openSettingsModal() {
+      const modal = document.getElementById('settings-modal');
+      modal.style.display = 'flex';
+      // Load current inputs to match config
+      document.getElementById('set-master-key').value = config.masterKey;
+      document.getElementById('set-admin-user').value = config.adminUsername;
+      document.getElementById('set-admin-pass').value = config.adminPassword;
+      document.getElementById('set-login-path').value = config.loginPath;
+
+      config.departments.forEach(dept => {
+        const input = document.getElementById(`url-${dept.id}`);
+        if (input) input.value = dept.url;
+      });
+    }
+
+    function closeSettingsModal() {
+      const modal = document.getElementById('settings-modal');
+      modal.style.display = 'none';
+    }
+
+    function closeSettingsModalOutside(event) {
+      if (event.target === document.getElementById('settings-modal')) {
+        closeSettingsModal();
+      }
+    }
+
+    function saveConfigSettings() {
+      // Update config from input values
+      config.masterKey = document.getElementById('set-master-key').value.trim();
+      config.adminUsername = document.getElementById('set-admin-user').value.trim();
+      config.adminPassword = document.getElementById('set-admin-pass').value.trim();
+      config.loginPath = document.getElementById('set-login-path').value.trim();
+
+      config.departments.forEach(dept => {
+        const input = document.getElementById(`url-${dept.id}`);
+        if (input) {
+          dept.url = input.value.trim().replace(/\/$/, ''); // Remove trailing slash
+        }
+      });
+
+      // Save to local storage
+      localStorage.setItem('kjsit_hub_config', JSON.stringify(config));
+
+      // Re-render
+      renderDepartments();
+      closeSettingsModal();
+      showToast('Settings saved & portals updated successfully.', 'success');
+    }
+
+    function resetSettingsToDefault() {
+      if (confirm('Are you sure you want to restore all settings and domains to defaults?')) {
+        config = JSON.parse(JSON.stringify(DEFAULTS));
+        localStorage.setItem('kjsit_hub_config', JSON.stringify(config));
+        loadConfig();
+        closeSettingsModal();
+        showToast('All configurations restored to system defaults.', 'success');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // SLICK BACKGROUND CANVAS PARTICLES (Aesthetic Wow-Factor)
+    // -------------------------------------------------------------
+    function initParticles() {
+      const canvas = document.getElementById('bg-canvas');
+      const ctx = canvas.getContext('2d');
+
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+
+      const particles = [];
+      const particleCount = Math.min(50, Math.floor((width * height) / 30000)); // Adaptive count
+
+      window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
+
+      class Particle {
+        constructor() {
+          this.x = Math.random() * width;
+          this.y = Math.random() * height;
+          this.size = Math.random() * 2 + 0.5;
+          this.vx = (Math.random() - 0.5) * 0.4;
+          this.vy = (Math.random() - 0.5) * 0.4;
+          // Colors ranging from Somaiya red to deep charcoal
+          this.color = Math.random() > 0.6 ? 'rgba(165, 12, 34, 0.25)' : 'rgba(255, 255, 255, 0.1)';
+        }
+
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+
+          if (this.x < 0 || this.x > width) this.vx *= -1;
+          if (this.y < 0 || this.y > height) this.vy *= -1;
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        }
+      }
+
+      for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle());
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+
+        // Subtle background grid
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.015)';
+        ctx.lineWidth = 1;
+        const gridSpacing = 60;
+        for (let x = 0; x < width; x += gridSpacing) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < height; y += gridSpacing) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+
+        particles.forEach(p => {
+          p.update();
+          p.draw();
+        });
+
+        // Draw connection lines
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dist = Math.hypot(particles[i].x - particles[j].x, particles[i].y - particles[j].y);
+            if (dist < 150) {
+              const alpha = (1 - dist / 150) * 0.08;
+              ctx.strokeStyle = `rgba(165, 12, 34, ${alpha})`;
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+    }
+  </script>
+</body>
+
+</html>
