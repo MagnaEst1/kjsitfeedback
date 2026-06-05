@@ -81,7 +81,7 @@ jobs:
               python manage.py migrate
 
               # 4. Collect static
-              python manage.py collectstatic --noinput
+              # python manage.py collectstatic --noinput
 
               # 5. Clean cache + HARD restart (like cPanel)
               
