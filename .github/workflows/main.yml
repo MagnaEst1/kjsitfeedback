@@ -83,9 +83,19 @@ jobs:
               # 4. Collect static
               python manage.py collectstatic --noinput
 
-              # 5. Restart Passenger (cPanel)
+              # 5. Clean cache + HARD restart (like cPanel)
+              
+              # remove stale python cache
+              find /home/t0hmsl01bmmd/public_html/$site -name "*.pyc" -delete
+              find /home/t0hmsl01bmmd/public_html/$site -type d -name "__pycache__" -exec rm -r {} +
+              
+              # kill old processes (IMPORTANT)
+              pkill -f "passenger" || true
+              pkill -f "python" || true
+              
+              # restart passenger
+              mkdir -p /home/t0hmsl01bmmd/public_html/$site/tmp
               touch /home/t0hmsl01bmmd/public_html/$site/tmp/restart.txt
-
               echo "✅ Done $site"
               echo ""
             done
