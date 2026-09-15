@@ -334,11 +334,10 @@ class ExcelExportTestCase(TestCase):
         # Load the generated ZIP and verify filenames
         with zipfile.ZipFile(BytesIO(response.content)) as zf:
             filenames = zf.namelist()
-            # The folder path is: {division}/{subject_type_display.title()}/
-            # The filename is: {safe_subject_name}_{safe_professor_name}_{subject_type_display}_{batch_name}.xlsx
+            # The folder path is: Practical/Feedback 1/{division}/
             expected_filename = (
+                "Practical/Feedback 1/"
                 f"{self.division}/"
-                f"{practical_subject.get_subject_type_display().title()}/"
                 f"Operating System Lab_Professor Test_Practical_A1.xlsx"
             )
             self.assertIn(expected_filename, filenames)
@@ -377,5 +376,38 @@ class ExcelExportTestCase(TestCase):
             
             # Verify messages were sent
             self.assertTrue(mock_conn.send_messages.called)
+
+    def test_export_final_feedback_has_year_sheets_and_round_average(self):
+        self.form.second_feedback_enabled = True
+        self.form.save(update_fields=['second_feedback_enabled'])
+        response_two = FeedbackResponse.objects.create(
+            form=self.form,
+            student=self.student,
+            feedback_round=2,
+            is_anonymous=False
+        )
+        FeedbackAnswer.objects.create(response=response_two, question=self.q1, rating_answer=2)
+        FeedbackAnswer.objects.create(response=response_two, question=self.q2, rating_answer=3)
+
+        response = self.client.get(reverse('export_final_feedback'))
+        self.assertEqual(response.status_code, 200)
+        workbook = load_workbook(BytesIO(response.content))
+        self.assertEqual(workbook.sheetnames, ['FY', 'SY', 'TY', 'LY'])
+
+        worksheet = workbook['TY']
+        self.assertEqual(worksheet['B1'].value, 'K J Somaiya Institute of Technology')
+        self.assertEqual(worksheet['B2'].value, 'Department: COMPS')
+        self.assertEqual(worksheet['A4'].value, 'SR.NO.')
+        self.assertEqual(worksheet['E4'].value, 'ADiv')
+        self.assertEqual(worksheet['I4'].value, 'BDiv')
+        self.assertEqual(worksheet['M4'].value, 'Average (available scores)')
+        self.assertEqual(worksheet['B3'].value, 'Highlight above (%)')
+        self.assertEqual(worksheet['C3'].value, 80)
+        self.assertEqual(worksheet['D3'].value, 'Change the threshold in C3 to update the highlighted names.')
+        self.assertEqual(len(worksheet.data_validations.dataValidation), 1)
+        self.assertEqual(worksheet['M6'].value, 3.5)
+        self.assertEqual(worksheet['N6'].value, 0.7)
+        self.assertEqual(worksheet['N6'].number_format, '0.00%')
+        self.assertTrue(worksheet.conditional_formatting)
 
 

@@ -180,6 +180,10 @@ class FeedbackForm(models.Model):
     
     # Form settings
     is_active = models.BooleanField(default=True)
+    second_feedback_enabled = models.BooleanField(
+        default=False,
+        help_text="Allow students to submit the second feedback round for this form."
+    )
     allow_anonymous = models.BooleanField(default=True, help_text="Allow students to submit anonymous feedback")
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
@@ -236,11 +240,15 @@ class FeedbackQuestion(models.Model):
 class FeedbackResponse(models.Model):
     form = models.ForeignKey(FeedbackForm, on_delete=models.CASCADE, related_name='responses')
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    feedback_round = models.PositiveSmallIntegerField(
+        default=1,
+        choices=[(1, 'Feedback 1'), (2, 'Feedback 2')]
+    )
     submitted_at = models.DateTimeField(auto_now_add=True)
     is_anonymous = models.BooleanField(default=True)
     
     class Meta:
-        unique_together = ['form', 'student']
+        unique_together = ['form', 'student', 'feedback_round']
         ordering = ['-submitted_at']
     
     def __str__(self):
